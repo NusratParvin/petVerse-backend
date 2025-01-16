@@ -42,6 +42,11 @@ router.patch(
   auth(USER_ROLE.USER, USER_ROLE.ADMIN),
   ArticleControllers.voteArticle,
 );
+router.post(
+  '/:articleId/react',
+  auth(USER_ROLE.USER),
+  ArticleControllers.reactToArticle,
+);
 
 router.patch(
   '/:id/publish',

@@ -92,19 +92,6 @@ const getFollowingArticles = catchAsync(async (req, res) => {
   });
 });
 
-// const getFollowingArticles = catchAsync(async (req, res) => {
-//   const userId = req.user.id;
-//   console.log(userId);
-//   const articles = await ArticleServices.getArticlesByFollowingFromDB(userId);
-
-//   sendResponse(res, {
-//     statusCode: httpStatus.OK,
-//     success: true,
-//     message: 'Articles from followed users fetched successfully',
-//     data: articles,
-//   });
-// });
-
 // Update an article
 const updateArticle = catchAsync(async (req, res) => {
   const articleId = req.params.id;
@@ -152,10 +139,27 @@ const voteArticle = catchAsync(async (req, res) => {
   });
 });
 
+// const shareArticle = catchAsync(async (req, res) => {
+//   const articleId = req.params.id;
+//   const userId = req.user.id;
+
+//   const sharedArticle = await ArticleServices.shareArticleIntoDB(
+//     articleId,
+//     userId,
+//   );
+
+//   sendResponse(res, {
+//     statusCode: httpStatus.OK,
+//     success: true,
+//     message: 'Article shared successfully',
+//     data: sharedArticle,
+//   });
+// });
+
 const publishArticle = catchAsync(async (req, res) => {
   const articleId = req.params.id;
   const { isPublish } = req.body;
-  console.log(articleId, isPublish, 'check cntroller');
+  // console.log(articleId, isPublish, 'check cntroller');
   const updatedArticle = await ArticleServices.updatePublishArticleIntoDB(
     articleId,
     isPublish,
@@ -198,6 +202,24 @@ const getDashboardFeed = catchAsync(async (req, res) => {
   });
 });
 
+const reactToArticle = catchAsync(async (req, res) => {
+  const { articleId } = req.params;
+  const { reaction } = req.body;
+  const userId = req.user.id;
+  // console.log(reaction, 'reaction');
+  const updatedArticle = await ArticleServices.reactToArticleIntoDB(
+    articleId,
+    userId,
+    reaction,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Reaction updated successfully',
+    data: updatedArticle,
+  });
+});
 export const ArticleControllers = {
   createArticle,
   getAllArticles,
@@ -209,4 +231,5 @@ export const ArticleControllers = {
   voteArticle,
   getMyArticles,
   getFollowingArticles,
+  reactToArticle,
 };

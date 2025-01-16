@@ -1,5 +1,14 @@
 import { z } from 'zod';
 
+const socialLoginSchema = z.object({
+  email: z.string().email(),
+  name: z.string(),
+  profilePhoto: z.string().optional(),
+  provider: z.string().refine((val) => ['google', 'facebook'].includes(val), {
+    message: 'Invalid provider',
+  }),
+});
+
 const loginValidationSchema = z.object({
   email: z.string().email({ message: 'Invalid email address' }),
 
@@ -42,6 +51,7 @@ const changePasswordValidationSchema = z.object({
 });
 
 export const AuthValidation = {
+  socialLoginSchema,
   loginValidationSchema,
   changePasswordValidationSchema,
   refreshTokenValidationSchema,

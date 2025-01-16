@@ -4,6 +4,10 @@ import { UserRoutes } from '../modules/user/user.route';
 import { ArticleRoutes } from '../modules/articles/articles.route';
 import { CommentRoutes } from '../modules/comments/comments.route';
 import { PaymentRoutes } from '../modules/payment/payment.route';
+import { ShareRoutes } from '../modules/shares/shares.route';
+import { FriendRoutes } from '../modules/friend/friend.route';
+import { PageRoutes } from '../modules/page/page.route';
+import { ReactionsRoutes } from '../modules/reactions/reactions.route';
 
 const router = Router();
 
@@ -13,6 +17,10 @@ const moduleRoutes = [
   { path: '/articles', route: ArticleRoutes },
   { path: '/comments', route: CommentRoutes },
   { path: '/payments', route: PaymentRoutes },
+  { path: '/share', route: ShareRoutes },
+  { path: '/friends', route: FriendRoutes },
+  { path: '/pages', route: PageRoutes },
+  { path: '/reactions', route: ReactionsRoutes },
 ];
 
 moduleRoutes.forEach((route) => router.use(route.path, route.route));

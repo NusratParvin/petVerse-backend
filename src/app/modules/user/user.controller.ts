@@ -7,11 +7,24 @@ const getUser = catchAsync(async (req, res) => {
   const { id } = req.user;
   // console.log(id);
   const result = await UserServices.getUserFromDB(id);
-
+  // console.log(result, 'me');
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: 'User profile retrieved successfully',
+    data: result,
+  });
+});
+
+const getFriend = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  // console.log(id);
+  const result = await UserServices.getFriendFromDB(id);
+  // console.log(result, 'friend');
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Friend profile retrieved successfully',
     data: result,
   });
 });
@@ -99,6 +112,7 @@ const getMostFollowedAuthors = catchAsync(async (req, res) => {
 
 export const UserControllers = {
   getUser,
+  getFriend,
   updateUserProfile,
   getAllUsers,
   deleteUser,

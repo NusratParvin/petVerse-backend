@@ -14,6 +14,7 @@ router.post(
   zodValidationRequest(CommentValidation.createCommentValidationSchema),
   CommentControllers.createComment,
 );
+router.get('/', auth(USER_ROLE.ADMIN), CommentControllers.getAllComments);
 
 // Get comments by article ID (this is likely the missing route)
 router.get(

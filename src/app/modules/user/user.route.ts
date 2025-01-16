@@ -12,6 +12,7 @@ router.get(
   auth(USER_ROLE.ADMIN, USER_ROLE.USER),
   UserControllers.getUser,
 );
+router.get('/friend/:id', auth(USER_ROLE.USER), UserControllers.getFriend);
 
 router.put(
   '/me',

@@ -23,7 +23,7 @@ const userSchema = new Schema<TUser, UserModel>(
 
     phone: {
       type: String,
-      required: true,
+      required: false,
     },
     bio: {
       type: String,
@@ -49,10 +49,13 @@ const userSchema = new Schema<TUser, UserModel>(
     },
     followers: [{ type: Schema.Types.ObjectId, ref: 'user' }],
     following: [{ type: Schema.Types.ObjectId, ref: 'user' }],
-    articles: [{ type: Schema.Types.ObjectId, ref: 'article' }],
+    articles: [{ type: Schema.Types.ObjectId, ref: 'Article' }],
     purchasedArticles: [
       { type: Schema.Types.ObjectId, ref: 'article', default: [] },
     ],
+    pendingInvites: [{ type: Schema.Types.ObjectId, ref: 'Page' }],
+
+    shareIds: [{ type: Schema.Types.ObjectId, ref: 'share', default: [] }],
   },
 
   {

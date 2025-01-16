@@ -9,7 +9,7 @@ export type TUser = {
   email: string;
   password: string;
   bio?: string;
-  phone: string;
+  phone?: string;
   address?: string;
   role: TUserRole;
   profilePhoto?: string;
@@ -18,6 +18,8 @@ export type TUser = {
   following: string[];
   articles: string[];
   purchasedArticles: Types.ObjectId[];
+  shareIds: Types.ObjectId[];
+  pendingInvites: Types.ObjectId[];
 };
 
 export interface UserModel extends Model<TUser> {

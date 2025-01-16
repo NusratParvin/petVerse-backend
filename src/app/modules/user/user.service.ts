@@ -9,6 +9,29 @@ const getUserFromDB = async (id: string) => {
 
   return result;
 };
+const getFriendFromDB = async (id: string) => {
+  try {
+    console.log('Fetching user...');
+    const result = await User.findById(id)
+      .select('-password')
+      .populate({
+        path: 'articles',
+        match: { isDeleted: false, isPublish: true }, // Optional: Apply conditions
+        // select: 'title content createdAt',
+      });
+
+    if (!result) {
+      console.log('User not found.');
+      return null;
+    }
+
+    console.log(result, 'User with articles');
+    return result;
+  } catch (error) {
+    console.error('Error fetching user with articles:', error);
+    throw error;
+  }
+};
 
 const updateUserIntoDB = async (userId: string, payload: Partial<TUser>) => {
   // Find the user to get the current email
@@ -143,6 +166,7 @@ const getMostFollowedAuthorsFromDB = async () => {
 
 export const UserServices = {
   getUserFromDB,
+  getFriendFromDB,
   updateUserIntoDB,
   getAllUsersFromDB,
   deleteUserFromDB,

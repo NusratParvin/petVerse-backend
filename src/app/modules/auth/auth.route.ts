@@ -22,6 +22,12 @@ router.post(
 );
 
 router.post(
+  '/social-login',
+  zodValidationRequest(AuthValidation.socialLoginSchema),
+  AuthControllers.socialLogin,
+);
+
+router.post(
   '/forget-password',
   // auth(USER_ROLE.ADMIN, USER_ROLE.USER),
   zodValidationRequest(AuthValidation.forgetPasswordValidationSchema),

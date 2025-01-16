@@ -1,4 +1,5 @@
 import { Types } from 'mongoose';
+import { TReactionSummary } from '../reactions/reactions.interface';
 
 export type TVoteType = 'upvote' | 'downvote';
 
@@ -21,4 +22,6 @@ export type TArticle = {
   isDeleted?: boolean;
   isPublish: boolean;
   voteInfo: TVoteInfo[];
+  shareCount: number;
+  reactionSummary: TReactionSummary;
 };

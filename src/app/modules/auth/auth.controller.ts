@@ -2,19 +2,7 @@ import httpStatus from 'http-status';
 import { catchAsync } from '../../utils/catchAsync';
 import sendResponse from '../../utils/sendResponse';
 import { AuthServices } from './auth.service';
-import config from '../../config';
 import AppError from '../../errors/AppError';
-
-// const signUp = catchAsync(async (req, res) => {
-//   const result = await AuthServices.signUp(req.body);
-
-//   sendResponse(res, {
-//     statusCode: httpStatus.CREATED,
-//     success: true,
-//     message: 'User registered successfully',
-//     data: result,
-//   });
-// });
 
 const signUp = catchAsync(async (req, res) => {
   // const { name, email, password, phone, address, profilePhoto, terms } =
@@ -44,33 +32,20 @@ const login = catchAsync(async (req, res) => {
 
   res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
-    secure: config.NODE_ENV === 'production',
-    sameSite: 'lax',
+    // secure: config.NODE_ENV === 'production',
+    // secure: process.env.NODE_ENV === 'production',
+    secure: true,
+    // sameSite: 'lax',
+    sameSite: 'none',
   });
   res.cookie('accessToken', accessToken, {
     httpOnly: true,
+    // secure: process.env.NODE_ENV === 'production',
+    secure: true,
     // secure: config.NODE_ENV === 'production',
     sameSite: 'lax',
+    // sameSite: 'none',
   });
-  // console.log(userExists);
-  // const loggedInUser = {
-  //   _id: userExists._id,
-  //   name: userExists.name,
-  //   email: userExists.email,
-  //   phone: userExists.phone,
-  //   address: userExists.address,
-  //   role: userExists.role,
-  // };
-
-  // sendResponse(res, {
-  //   statusCode: httpStatus.OK,
-  //   success: true,
-  //   message: 'User is logged in successfully!',
-  //   data: {
-  //     accessToken,
-  //     refreshToken,
-  //   },
-  // });
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -78,6 +53,47 @@ const login = catchAsync(async (req, res) => {
     message: 'User logged in successfully',
     token: accessToken,
     data: userExists,
+  });
+});
+
+const socialLogin = catchAsync(async (req, res) => {
+  // console.log('Social login initiated.');
+  // console.log('Request body:', req.body);
+
+  const { email, name, profilePhoto, provider } = req.body;
+
+  const { accessToken, refreshToken, user } = await AuthServices.socialLogin({
+    email,
+    name,
+    profilePhoto,
+    provider,
+  });
+
+  // console.log('User:', user);
+  // console.log('accessToken:', accessToken);
+
+  // Set cookies for tokens
+  res.cookie('refreshToken', refreshToken, {
+    httpOnly: true,
+    // secure: process.env.NODE_ENV === 'production',
+    secure: true,
+    sameSite: 'lax',
+  });
+  res.cookie('accessToken', accessToken, {
+    httpOnly: false,
+    // secure: process.env.NODE_ENV === 'production',
+    secure: true,
+    // secure: config.NODE_ENV === 'production',
+    sameSite: 'lax',
+  });
+
+  // console.log('Sending response back to client...');
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Social login successful',
+    token: accessToken,
+    data: user,
   });
 });
 
@@ -127,6 +143,7 @@ const resetPassword = catchAsync(async (req, res) => {
 export const AuthControllers = {
   signUp,
   login,
+  socialLogin,
   changePassword,
   forgetPassword,
   resetPassword,

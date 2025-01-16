@@ -65,6 +65,77 @@ const login = async (payload: TLoginUser) => {
   };
 };
 
+const socialLogin = async ({
+  email,
+  name,
+  profilePhoto,
+  provider,
+}: {
+  email: string;
+  name: string;
+  profilePhoto?: string;
+  provider: string;
+}) => {
+  // console.log('Starting socialLogin service...');
+  // console.log('Incoming data:', { email, name, profilePhoto, provider });
+
+  try {
+    // console.log('Checking if user already exists...');
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      // console.log('User not found. Creating new user...');
+      user = await User.create({
+        email,
+        name,
+        profilePhoto,
+        password: `${provider}-${Date.now()}`, // Dummy password
+        role: 'USER',
+        phone: '',
+        address: '',
+        bio: '',
+
+        followers: [],
+        following: [],
+        articles: [],
+      });
+      // console.log('New user created:', user);
+    } else {
+      console.log('User already exists:', user);
+    }
+
+    // Generate tokens
+    const jwtPayload = {
+      id: user._id,
+      email: user.email,
+      role: user.role,
+    };
+
+    // console.log('Generating JWT tokens...');
+    // console.log('JWT Payload:', jwtPayload);
+
+    const accessToken = createJwtToken(
+      jwtPayload,
+      process.env.JWT_ACCESS_SECRET!,
+      process.env.JWT_ACCESS_EXPIRES_IN!,
+    );
+    // console.log('Access token generated.');
+
+    const refreshToken = createJwtToken(
+      jwtPayload,
+      process.env.JWT_REFRESH_SECRET!,
+      process.env.JWT_REFRESH_EXPIRES_IN!,
+    );
+    // console.log('Refresh token generated.');
+
+    // console.log('Returning tokens and user...');
+    return { accessToken, refreshToken, user };
+  } catch (error) {
+    console.error('Error in socialLogin service:', error);
+    throw new Error('Social login failed.');
+  }
+};
+
 const changePassword = async (
   userData: JwtPayload,
   payload: { oldPassword: string; newPassword: string },
@@ -223,6 +294,7 @@ const resetPassword = async (
 export const AuthServices = {
   signUp,
   login,
+  socialLogin,
   changePassword,
   forgetPassword,
   resetPassword,

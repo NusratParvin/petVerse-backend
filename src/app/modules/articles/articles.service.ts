@@ -4,6 +4,8 @@ import { Article } from './articles.model';
 import { TArticle, TVoteType } from './articles.interface';
 import { User } from '../user/user.model';
 import mongoose, { Types } from 'mongoose';
+import { Reaction } from '../reactions/reactions.model';
+import { REACTION_TYPE } from '../reactions/reactions.interface';
 
 const createArticleIntoDB = async (payload: TArticle, userId: string) => {
   const articleData = { ...payload, authorId: userId };
@@ -37,10 +39,12 @@ const createArticleIntoDB = async (payload: TArticle, userId: string) => {
 };
 
 const getAllArticlesFromDB = async () => {
-  const result = await Article.find().populate({
-    path: 'authorId',
-    select: 'name profilePhoto followers',
-  });
+  const result = await Article.find()
+    .populate({
+      path: 'authorId',
+      select: 'name profilePhoto followers',
+    })
+    .sort({ createdAt: -1 });
   return result;
 };
 
@@ -57,23 +61,7 @@ const getSingleArticleFromDB = async (articleId: string) => {
       path: 'authorId',
       select: 'name profilePhoto followers following ',
     });
-  // .exec();
 
-  // const article = await Article.findById(articleId).populate;
-  // .populate({
-  //   path: 'authorId',
-  //   select: 'name profilePhoto followers',
-  // });
-  // .populate('comments');
-  // if ((article?.comments?.length || 0) > 0) {
-  //   await article?.populate(
-  //     comments,
-  //     // path: 'comments',
-  //     // populate: {
-  //     //   path: 'commenter',
-  //     // },
-  //   );
-  // }
   console.log(article, 'service');
   if (!article) {
     throw new AppError(httpStatus.NOT_FOUND, 'No Data Found');
@@ -264,7 +252,6 @@ const getMyArticlesFromDB = async (userId: string) => {
   }
 
   return articles;
-  // return false;
 };
 
 const getArticlesByFollowingFromDB = async (userId: string) => {
@@ -290,6 +277,75 @@ const getArticlesByFollowingFromDB = async (userId: string) => {
   return articles;
 };
 
+const reactToArticleIntoDB = async (
+  articleId: string,
+  userId: string,
+  reaction: REACTION_TYPE,
+) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    // console.log(
+    //   `Starting reaction process for articleId: ${articleId}, userId: ${userId}, reaction: ${reaction}`,
+    // );
+
+    const existingReaction = await Reaction.findOne({
+      articleId,
+      userId,
+    }).session(session);
+    // console.log('Existing reaction:', existingReaction);
+
+    let previousReaction: REACTION_TYPE | null = null;
+
+    if (existingReaction) {
+      previousReaction = existingReaction.reactionType;
+
+      if (existingReaction.reactionType !== reaction) {
+        // console.log('Updating reaction to:', reaction);
+        existingReaction.reactionType = reaction;
+        await existingReaction.save({ session });
+      } else {
+        // console.log('Removing reaction:', existingReaction.reactionType);
+        await Reaction.deleteOne({ _id: existingReaction._id }).session(
+          session,
+        );
+        previousReaction = existingReaction.reactionType;
+        reaction = null as unknown as REACTION_TYPE;
+      }
+    } else {
+      // console.log('Creating new reaction:', reaction);
+      await Reaction.create([{ articleId, userId, reactionType: reaction }], {
+        session,
+      });
+    }
+
+    // Prepare the summary update object
+    const summaryUpdate: Record<string, number> = {};
+    if (reaction) summaryUpdate[`reactionSummary.${reaction}`] = 1;
+    if (previousReaction)
+      summaryUpdate[`reactionSummary.${previousReaction}`] = -1;
+    console.log('Summary update:', summaryUpdate);
+
+    const updatedArticle = await Article.findByIdAndUpdate(
+      articleId,
+      { $inc: summaryUpdate },
+      { new: true, session },
+    );
+
+    if (!updatedArticle) throw new Error('Article not found');
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return updatedArticle;
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
+  }
+};
+
 export const ArticleServices = {
   createArticleIntoDB,
   getAllArticlesFromDB,
@@ -302,4 +358,5 @@ export const ArticleServices = {
   updateArticleVotesIntoDB,
   getMyArticlesFromDB,
   getArticlesByFollowingFromDB,
+  reactToArticleIntoDB,
 };

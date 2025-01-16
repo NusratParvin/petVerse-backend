@@ -140,7 +140,7 @@ const updateCommentIntoDB = async (
 };
 
 const deleteCommentFromDB = async (commentId: string, articleId: string) => {
-  console.log(articleId);
+  // console.log(articleId);
   const session = await mongoose.startSession();
   session.startTransaction();
 
@@ -196,10 +196,21 @@ const getCommentsByArticleIdFromDB = async (articleId: string) => {
   return comments;
 };
 
+const getAllCommentsFromDB = async () => {
+  const comments = await Comment.find();
+  console.log(comments);
+
+  if (!comments || comments.length === 0) {
+    throw new AppError(httpStatus.NOT_FOUND, 'No comments found  ');
+  }
+  return comments;
+};
+
 export const CommentServices = {
   createCommentIntoDB,
   getCommentsByArticleIdFromDB,
   updateCommentVotesIntoDB,
   updateCommentIntoDB,
   deleteCommentFromDB,
+  getAllCommentsFromDB,
 };
