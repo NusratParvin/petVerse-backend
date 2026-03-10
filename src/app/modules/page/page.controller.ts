@@ -70,7 +70,7 @@ const getPageDetails = catchAsync(async (req: Request, res: Response) => {
   const { pageId } = req.params;
 
   const page = await PageServices.getPageDetailsFromDB(pageId);
-  console.log(page);
+  // console.log(page);
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,

@@ -12,20 +12,20 @@ app.use(express.json());
 // app.use(cors());
 app.use(cookieParser());
 
-// app.use(
-//   cors({
-//     origin: 'http://localhost:3000',
-//     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-//     credentials: true,
-//   }),
-// );
 app.use(
   cors({
-    origin: 'https://fishcove-client.vercel.app',
+    origin: 'http://localhost:3000',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   }),
 );
+// app.use(
+//   cors({
+//     origin: 'https://fishcove-client.vercel.app',
+//     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+//     credentials: true,
+//   }),
+// );
 // app.options('*', cors());
 app.use('/api/v1', router);
 

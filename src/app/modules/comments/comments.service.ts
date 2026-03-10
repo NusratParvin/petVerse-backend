@@ -198,7 +198,7 @@ const getCommentsByArticleIdFromDB = async (articleId: string) => {
 
 const getAllCommentsFromDB = async () => {
   const comments = await Comment.find();
-  console.log(comments);
+  // console.log(comments);
 
   if (!comments || comments.length === 0) {
     throw new AppError(httpStatus.NOT_FOUND, 'No comments found  ');
