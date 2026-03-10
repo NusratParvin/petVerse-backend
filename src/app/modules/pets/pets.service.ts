@@ -50,6 +50,7 @@ const deletePetFromDB = async (petId: string) => {
   if (!pet) {
     throw new AppError(httpStatus.NOT_FOUND, 'Pet not found');
   }
+
   return pet;
 };
 
