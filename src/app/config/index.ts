@@ -15,4 +15,7 @@ export default {
   reset_pass_ui_link: process.env.RESET_PASS_UI_LINK,
   email_user: process.env.EMAIL_USER,
   email_pass: process.env.EMAIL_PASS,
+  twilio_acc_sid: process.env.TWILIO_ACCOUNT_SID,
+  twilio_auth_token: process.env.TWILIO_AUTH_TOKEN,
+  twilio_whatsapp_from: process.env.TWILIO_WHATSAPP_FROM,
 };
