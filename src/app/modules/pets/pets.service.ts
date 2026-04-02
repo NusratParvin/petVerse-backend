@@ -32,8 +32,8 @@ const updatePetIntoDB = async (
   userId: string,
   updateData: Partial<TPet>,
 ) => {
-  const pet = await Pet.findByIdAndUpdate(
-    { _id: petId, isDeleted: false },
+  const pet = await Pet.findOneAndUpdate(
+    { _id: petId, owner: userId, isDeleted: false },
     updateData,
     { new: true, runValidators: true },
   );

@@ -5,6 +5,7 @@ import { PetServices } from './pets.service';
 
 const createPet = catchAsync(async (req, res) => {
   const userId = req.user.id;
+  //   const userId = '678299d038fe32f2152a5e42';
   const result = await PetServices.createPetIntoDB(req.body, userId);
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
@@ -16,6 +17,8 @@ const createPet = catchAsync(async (req, res) => {
 
 const getMyPets = catchAsync(async (req, res) => {
   const userId = req.user.id;
+  //   const userId = '678299d038fe32f2152a5e42';
+
   const result = await PetServices.getMyPetsFromDB(userId);
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -37,6 +40,8 @@ const getSinglePet = catchAsync(async (req, res) => {
 
 const updatePet = catchAsync(async (req, res) => {
   const userId = req.user.id;
+  //   const userId = '678299d038fe32f2152a5e42';
+
   const result = await PetServices.updatePetIntoDB(
     req.params.id,
     userId,
@@ -62,6 +67,8 @@ const deletePet = catchAsync(async (req, res) => {
 
 const addHealthRecord = catchAsync(async (req, res) => {
   const userId = req.user.id;
+  //   const userId = '678299d038fe32f2152a5e42';
+
   const result = await PetServices.addHealthRecordIntoDB(
     userId,
     req.params.id,
@@ -77,6 +84,8 @@ const addHealthRecord = catchAsync(async (req, res) => {
 
 const getUpcomingReminders = catchAsync(async (req, res) => {
   const userId = req.user.id;
+  //   const userId = '678299d038fe32f2152a5e42';
+
   const result = await PetServices.getUpcomingRemindersFromDB(userId);
   sendResponse(res, {
     statusCode: httpStatus.OK,

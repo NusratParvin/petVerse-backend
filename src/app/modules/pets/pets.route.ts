@@ -7,10 +7,8 @@ import { PetControllers } from './pets.controller';
 
 const router = express.Router();
 
-// Public — no auth needed (vet can search by microchip)
 router.get('/microchip/:chipNumber', PetControllers.findByMicrochip);
 
-// Protected routes
 router.post(
   '/',
   auth(USER_ROLE.USER, USER_ROLE.ADMIN),
