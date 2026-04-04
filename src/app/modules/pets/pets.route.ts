@@ -53,5 +53,16 @@ router.post(
   zodValidationRequest(PetValidation.addHealthRecordValidationSchema),
   PetControllers.addHealthRecord,
 );
+router.delete(
+  '/:id/health-record/:recordId',
+  auth(USER_ROLE.USER, USER_ROLE.ADMIN),
+  PetControllers.deleteHealthRecord,
+);
 
+router.patch(
+  '/:id/health-record/:recordId',
+  auth(USER_ROLE.USER, USER_ROLE.ADMIN),
+  zodValidationRequest(PetValidation.updatePetValidationSchema),
+  PetControllers.updateHealthRecord,
+);
 export const PetRoutes = router;

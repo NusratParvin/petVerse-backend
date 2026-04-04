@@ -178,6 +178,40 @@ const getUpcomingRemindersFromDB = async (userId: string) => {
   return reminders;
 };
 
+const deleteHealthRecordFromDB = async (
+  petId: string,
+  userId: string,
+  recordId: string,
+) => {
+  const pet = await Pet.findOneAndUpdate(
+    { _id: petId, owner: userId, isDeleted: false },
+    { $pull: { healthRecords: { _id: recordId } } },
+    { new: true },
+  );
+  if (!pet) throw new AppError(httpStatus.NOT_FOUND, 'Pet not found');
+  return pet;
+};
+
+const updateHealthRecordIntoDB = async (
+  petId: string,
+  userId: string,
+  recordId: string,
+  updateData: Partial<THealthRecord>,
+) => {
+  const pet = await Pet.findOneAndUpdate(
+    {
+      _id: petId,
+      owner: userId,
+      isDeleted: false,
+      'healthRecords._id': recordId,
+    },
+    { $set: { 'healthRecords.$': { ...updateData, _id: recordId } } },
+    { new: true },
+  );
+  if (!pet) throw new AppError(httpStatus.NOT_FOUND, 'Pet or record not found');
+  return pet;
+};
+
 export const PetServices = {
   createPetIntoDB,
   findByMicrochipFromDB,
@@ -188,4 +222,6 @@ export const PetServices = {
   addHealthRecordIntoDB,
   getAllUpcomingRemindersFromDB,
   getUpcomingRemindersFromDB,
+  updateHealthRecordIntoDB,
+  deleteHealthRecordFromDB,
 };

@@ -105,6 +105,37 @@ const findByMicrochip = catchAsync(async (req, res) => {
   });
 });
 
+const deleteHealthRecord = catchAsync(async (req, res) => {
+  const userId = req.user.id;
+  const result = await PetServices.deleteHealthRecordFromDB(
+    req.params.id,
+    userId,
+    req.params.recordId,
+  );
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Health record deleted',
+    data: result,
+  });
+});
+
+const updateHealthRecord = catchAsync(async (req, res) => {
+  const userId = req.user.id;
+  const result = await PetServices.updateHealthRecordIntoDB(
+    req.params.id,
+    userId,
+    req.params.recordId,
+    req.body,
+  );
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Health record updated',
+    data: result,
+  });
+});
+
 export const PetControllers = {
   createPet,
   getMyPets,
@@ -114,4 +145,6 @@ export const PetControllers = {
   addHealthRecord,
   getUpcomingReminders,
   findByMicrochip,
+  updateHealthRecord,
+  deleteHealthRecord,
 };
