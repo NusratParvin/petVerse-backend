@@ -122,11 +122,14 @@ const deleteHealthRecord = catchAsync(async (req, res) => {
 
 const updateHealthRecord = catchAsync(async (req, res) => {
   const userId = req.user.id;
+  const { id, recordId } = req.params;
+  const updateData = req.body;
+
   const result = await PetServices.updateHealthRecordIntoDB(
-    req.params.id,
+    id,
     userId,
-    req.params.recordId,
-    req.body,
+    recordId,
+    updateData,
   );
   sendResponse(res, {
     statusCode: httpStatus.OK,

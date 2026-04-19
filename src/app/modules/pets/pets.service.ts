@@ -198,6 +198,7 @@ const updateHealthRecordIntoDB = async (
   recordId: string,
   updateData: Partial<THealthRecord>,
 ) => {
+  // console.log(petId, userId, recordId, updateData);
   const pet = await Pet.findOneAndUpdate(
     {
       _id: petId,

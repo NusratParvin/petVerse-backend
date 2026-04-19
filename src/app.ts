@@ -9,7 +9,11 @@ import notFound from './app/middlewares/notFound';
 const app: Application = express();
 app.use(
   cors({
-    origin: ['http://localhost:3000', 'https://fishcove-client.vercel.app'],
+    origin: [
+      'http://localhost:3000',
+      'https://fishcove-client.vercel.app',
+      'https://petverse-frontend-theta.vercel.app',
+    ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -19,7 +23,7 @@ app.use(
 app.options('*', cors());
 
 app.use(express.json());
-// app.use(cors());
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // app.use(

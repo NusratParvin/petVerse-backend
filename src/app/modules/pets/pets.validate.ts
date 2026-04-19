@@ -62,8 +62,21 @@ const addHealthRecordValidationSchema = z.object({
   vetName: z.string().optional(),
 });
 
+const updateHealthRecordValidationSchema = z.object({
+  type: z
+    .enum(['vaccine', 'vet-visit', 'medication', 'grooming', 'other'])
+    .optional(),
+  title: z.string().optional(),
+  date: z.string().optional(),
+  nextDueDate: z.string().optional(),
+  notes: z.string().optional(),
+  cost: z.number().optional(),
+  vetName: z.string().optional(),
+});
+
 export const PetValidation = {
   createPetValidationSchema,
   updatePetValidationSchema,
   addHealthRecordValidationSchema,
+  updateHealthRecordValidationSchema,
 };

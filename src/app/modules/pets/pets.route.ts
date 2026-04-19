@@ -62,7 +62,7 @@ router.delete(
 router.patch(
   '/:id/health-record/:recordId',
   auth(USER_ROLE.USER, USER_ROLE.ADMIN),
-  zodValidationRequest(PetValidation.updatePetValidationSchema),
+  zodValidationRequest(PetValidation.updateHealthRecordValidationSchema),
   PetControllers.updateHealthRecord,
 );
 export const PetRoutes = router;
