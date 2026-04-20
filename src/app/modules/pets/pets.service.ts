@@ -192,6 +192,18 @@ const deleteHealthRecordFromDB = async (
   return pet;
 };
 
+const getHealthRecordIntoDB = async (petId: string, recordId: string) => {
+  const record = await Pet.findOne({
+    _id: petId,
+    'healthRecords._id': recordId,
+    isDeleted: false,
+  });
+  if (!record) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Pet health record not found!');
+  }
+  return record;
+};
+
 const updateHealthRecordIntoDB = async (
   petId: string,
   userId: string,
@@ -223,6 +235,7 @@ export const PetServices = {
   addHealthRecordIntoDB,
   getAllUpcomingRemindersFromDB,
   getUpcomingRemindersFromDB,
+  getHealthRecordIntoDB,
   updateHealthRecordIntoDB,
   deleteHealthRecordFromDB,
 };

@@ -53,6 +53,13 @@ router.post(
   zodValidationRequest(PetValidation.addHealthRecordValidationSchema),
   PetControllers.addHealthRecord,
 );
+
+router.get(
+  '/:id/health-record',
+  auth(USER_ROLE.USER, USER_ROLE.ADMIN),
+  PetControllers.getHealthRecord,
+);
+
 router.delete(
   '/:id/health-record/:recordId',
   auth(USER_ROLE.USER, USER_ROLE.ADMIN),

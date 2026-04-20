@@ -139,6 +139,19 @@ const updateHealthRecord = catchAsync(async (req, res) => {
   });
 });
 
+const getHealthRecord = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const recordId = req.body;
+
+  const result = await PetServices.getHealthRecordIntoDB(id, recordId);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Health record updated',
+    data: result,
+  });
+});
+
 export const PetControllers = {
   createPet,
   getMyPets,
@@ -150,4 +163,5 @@ export const PetControllers = {
   findByMicrochip,
   updateHealthRecord,
   deleteHealthRecord,
+  getHealthRecord,
 };
