@@ -41,7 +41,7 @@ const getSinglePet = catchAsync(async (req, res) => {
 const updatePet = catchAsync(async (req, res) => {
   const userId = req.user.id;
   //   const userId = '678299d038fe32f2152a5e42';
-
+  // console.log(req.body);
   const result = await PetServices.updatePetIntoDB(
     req.params.id,
     userId,
