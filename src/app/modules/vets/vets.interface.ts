@@ -32,10 +32,15 @@ export type TWorkingHours = {
   closed: boolean;
 };
 
-export type TServiceRate = {
-  service: string;
-  priceFrom: number;
-  priceTo: number;
+// export type TServiceRate = {
+//   service: string;
+//   priceFrom: number;
+//   priceTo: number;
+// };
+
+export type TPriceRange = {
+  basePrice: number;
+  maxPrice: number;
 };
 
 export type TVet = {
@@ -53,11 +58,12 @@ export type TVet = {
   photos?: string[];
   specialities: TSpeciality[];
   workingHours: TWorkingHours[];
-  serviceRates: TServiceRate[];
+  // serviceRates: TServiceRate[];
+  priceRange: TPriceRange;
   rating: number;
   reviewCount: number;
   about?: string;
   googleMapsUrl?: string;
-  isClaimed: boolean;
-  isDeleted: boolean;
+  isClaimed?: boolean;
+  isDeleted?: boolean;
 };

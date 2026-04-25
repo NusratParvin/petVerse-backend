@@ -11,11 +11,19 @@ const workingHoursSchema = new Schema(
   { _id: false },
 );
 
-const serviceRateSchema = new Schema(
+// const serviceRateSchema = new Schema(
+//   {
+//     service: { type: String, required: true },
+//     priceFrom: { type: Number, required: true },
+//     priceTo: { type: Number, required: true },
+//   },
+//   { _id: false },
+// );
+
+const priceRangeSchema = new Schema(
   {
-    service: { type: String, required: true },
-    priceFrom: { type: Number, required: true },
-    priceTo: { type: Number, required: true },
+    basePrice: { type: Number, required: true, min: 0 },
+    maxPrice: { type: Number, required: true, min: 0 },
   },
   { _id: false },
 );
@@ -67,7 +75,8 @@ const vetSchema = new Schema<TVet>(
       },
     ],
     workingHours: [workingHoursSchema],
-    serviceRates: [serviceRateSchema],
+    // serviceRates: [serviceRateSchema],
+    priceRange: priceRangeSchema,
     rating: { type: Number, default: 4.5, min: 0, max: 5 },
     reviewCount: { type: Number, default: 0 },
     about: { type: String },
@@ -80,5 +89,6 @@ const vetSchema = new Schema<TVet>(
 
 vetSchema.index({ emirate: 1, specialities: 1 });
 vetSchema.index({ isDeleted: 1 });
+vetSchema.index({ 'priceRange.consultationFrom': 1 });
 
 export const Vet = model<TVet>('Vet', vetSchema);

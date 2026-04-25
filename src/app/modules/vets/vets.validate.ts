@@ -34,11 +34,21 @@ const workingHoursSchema = z.object({
   closed: z.boolean().optional(),
 });
 
-const serviceRateSchema = z.object({
-  service: z.string(),
-  priceFrom: z.number().min(0),
-  priceTo: z.number().min(0),
-});
+// const serviceRateSchema = z.object({
+//   service: z.string(),
+//   priceFrom: z.number().min(0),
+//   priceTo: z.number().min(0),
+// });
+
+const priceRangeSchema = z
+  .object({
+    basePrice: z.number().min(0, 'Minimum price must be 0 or greater'),
+    maxPrice: z.number().min(0, 'Maximum price must be 0 or greater'),
+  })
+  .refine((data) => data.basePrice >= data.maxPrice, {
+    message: 'Maximum price must be greater than or equal to minimum price',
+    path: ['consultationTo'],
+  });
 
 const createVetSchema = z.object({
   body: z.object({
@@ -57,7 +67,8 @@ const createVetSchema = z.object({
       .array(z.enum(specialities))
       .min(1, 'At least one speciality required'),
     workingHours: z.array(workingHoursSchema).optional(),
-    serviceRates: z.array(serviceRateSchema).optional(),
+    // serviceRates: z.array(serviceRateSchema).optional(),
+    priceRange: priceRangeSchema,
     rating: z.number().min(0).max(5).optional(),
     reviewCount: z.number().min(0).optional(),
     about: z.string().optional(),
@@ -80,7 +91,8 @@ const updateVetSchema = z.object({
     photos: z.array(z.string()).optional(),
     specialities: z.array(z.enum(specialities)).optional(),
     workingHours: z.array(workingHoursSchema).optional(),
-    serviceRates: z.array(serviceRateSchema).optional(),
+    // serviceRates: z.array(serviceRateSchema).optional(),
+    priceRange: priceRangeSchema.optional(),
     rating: z.number().min(0).max(5).optional(),
     reviewCount: z.number().min(0).optional(),
     about: z.string().optional(),

@@ -15,7 +15,7 @@ router.get('/:id', VetController.getSingleVet);
 router.post(
   '/',
   auth(USER_ROLE.ADMIN),
-  validateRequest(VetValidation.createVetSchema),
+  // validateRequest(VetValidation.createVetSchema),
   VetController.createVet,
 );
 

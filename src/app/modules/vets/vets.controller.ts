@@ -6,6 +6,7 @@ import { catchAsync } from '../../utils/catchAsync';
 
 const createVet = catchAsync(async (req: Request, res: Response) => {
   const vet = await VetService.createVet(req.body);
+  console.log(vet);
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
     success: true,
