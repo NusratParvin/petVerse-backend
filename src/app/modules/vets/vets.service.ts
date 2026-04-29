@@ -1,3 +1,6 @@
+import { extract } from '../../utils/extract';
+import pagination from '../../utils/pagination';
+import { vetFilterableFields, vetPaginationFields } from './vets.constant';
 import { TVet } from './vets.interface';
 import { Vet } from './vets.model';
 
@@ -7,22 +10,41 @@ const createVet = async (payload: TVet) => {
 };
 
 const getAllVets = async (query: Record<string, unknown>) => {
-  const { emirate, speciality, search } = query;
+  const filters = extract(query, vetFilterableFields);
+  const paginationOptions = extract(query, vetPaginationFields);
+
+  const { page, limit, skip, sortBy, sortOrder } =
+    pagination(paginationOptions);
 
   const filter: Record<string, unknown> = { isDeleted: false };
 
-  if (emirate) filter.emirate = emirate;
-  if (speciality) filter.specialities = { $in: [speciality] };
-  if (search) {
+  if (filters.emirate) filter.emirate = filters.emirate;
+  if (filters.speciality) filter.specialities = { $in: [filters.speciality] };
+  if (filters.search) {
     filter.$or = [
-      { clinicName: { $regex: search, $options: 'i' } },
-      { name: { $regex: search, $options: 'i' } },
-      { area: { $regex: search, $options: 'i' } },
+      { clinicName: { $regex: filters.search, $options: 'i' } },
+      { name: { $regex: filters.search, $options: 'i' } },
+      { area: { $regex: filters.search, $options: 'i' } },
     ];
   }
 
-  const vets = await Vet.find(filter).sort({ rating: -1 });
-  return vets;
+  const vets = await Vet.find(filter)
+    .sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 })
+    .skip(skip)
+    .limit(limit)
+    .lean();
+
+  const total = await Vet.countDocuments(filter);
+
+  return {
+    data: vets,
+    meta: {
+      total,
+      page,
+      limit,
+      pages: Math.ceil(total / limit),
+    },
+  };
 };
 
 const getSingleVet = async (id: string) => {

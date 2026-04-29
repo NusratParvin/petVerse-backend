@@ -45,7 +45,7 @@ export type TPriceRange = {
 
 export type TVet = {
   _id: Types.ObjectId;
-  name: string;
+  name?: string;
   clinicName: string;
   emirate: TEmirate;
   area: string;
@@ -56,6 +56,7 @@ export type TVet = {
   website?: string;
   coverPhoto?: string;
   photos?: string[];
+  emergency: boolean;
   specialities: TSpeciality[];
   workingHours: TWorkingHours[];
   // serviceRates: TServiceRate[];

@@ -30,7 +30,7 @@ const priceRangeSchema = new Schema(
 
 const vetSchema = new Schema<TVet>(
   {
-    name: { type: String, required: true },
+    name: { type: String, required: false },
     clinicName: { type: String, required: true },
     emirate: {
       type: String,
@@ -81,6 +81,7 @@ const vetSchema = new Schema<TVet>(
     reviewCount: { type: Number, default: 0 },
     about: { type: String },
     googleMapsUrl: { type: String },
+    emergency: { type: Boolean, default: false },
     isClaimed: { type: Boolean, default: false },
     isDeleted: { type: Boolean, default: false },
   },

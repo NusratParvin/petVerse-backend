@@ -47,12 +47,12 @@ const priceRangeSchema = z
   })
   .refine((data) => data.basePrice >= data.maxPrice, {
     message: 'Maximum price must be greater than or equal to minimum price',
-    path: ['consultationTo'],
+    // path: ['consultationTo'],
   });
 
 const createVetSchema = z.object({
   body: z.object({
-    name: z.string().min(1, 'Vet name is required'),
+    name: z.string().min(1).optional(),
     clinicName: z.string().min(1, 'Clinic name is required'),
     emirate: z.enum(emirates),
     area: z.string().min(1, 'Area is required'),
@@ -73,6 +73,7 @@ const createVetSchema = z.object({
     reviewCount: z.number().min(0).optional(),
     about: z.string().optional(),
     googleMapsUrl: z.string().optional(),
+    emergency: z.boolean().optional(),
   }),
 });
 
@@ -97,6 +98,7 @@ const updateVetSchema = z.object({
     reviewCount: z.number().min(0).optional(),
     about: z.string().optional(),
     googleMapsUrl: z.string().optional(),
+    emergency: z.boolean().optional(),
     isClaimed: z.boolean().optional(),
   }),
 });

@@ -6,6 +6,14 @@ type TResponse<T> = {
   message?: string;
   token?: string;
   data?: T;
+  meta?: {
+    total: number;
+    page: number;
+    limit: number;
+    pages: number;
+    hasNext?: boolean;
+    hasPrev?: boolean;
+  };
 };
 
 const sendResponse = <T>(res: Response, data: TResponse<T>) => {
@@ -15,6 +23,7 @@ const sendResponse = <T>(res: Response, data: TResponse<T>) => {
     message: data.message,
     token: data.token,
     data: data.data,
+    meta: data.meta || null || undefined,
   });
 };
 
