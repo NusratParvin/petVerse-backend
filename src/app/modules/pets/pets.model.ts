@@ -4,7 +4,18 @@ import { TPet } from './pets.interface';
 const healthRecordSchema = new Schema({
   type: {
     type: String,
-    enum: ['vaccine', 'vet-visit', 'medication', 'grooming', 'other'],
+    enum: [
+      'vaccine',
+      'vet-visit',
+      'medication',
+      'grooming',
+      'other',
+      'lab-test',
+      'surgery',
+      'imaging',
+      'hospitalization',
+      // 'injection',
+    ],
     required: true,
   },
   title: { type: String, required: true },

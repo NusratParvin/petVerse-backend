@@ -53,7 +53,18 @@ const updatePetValidationSchema = z.object({
 });
 
 const addHealthRecordValidationSchema = z.object({
-  type: z.enum(['vaccine', 'vet-visit', 'medication', 'grooming', 'other']),
+  type: z.enum([
+    'vaccine',
+    'vet-visit',
+    'medication',
+    'grooming',
+    'other',
+    'lab-test',
+    'surgery',
+    'imaging',
+    'hospitalization',
+    // 'injection',
+  ]),
   title: z.string().nonempty({ message: 'Title is required' }),
   date: z.string().nonempty({ message: 'Date is required' }),
   nextDueDate: z.string().optional(),
@@ -64,7 +75,18 @@ const addHealthRecordValidationSchema = z.object({
 
 const updateHealthRecordValidationSchema = z.object({
   type: z
-    .enum(['vaccine', 'vet-visit', 'medication', 'grooming', 'other'])
+    .enum([
+      'vaccine',
+      'vet-visit',
+      'medication',
+      'grooming',
+      'other',
+      'lab-test',
+      'surgery',
+      'imaging',
+      'hospitalization',
+      // 'injection',
+    ])
     .optional(),
   title: z.string().optional(),
   date: z.string().optional(),

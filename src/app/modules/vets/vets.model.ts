@@ -79,8 +79,11 @@ const vetSchema = new Schema<TVet>(
     priceRange: priceRangeSchema,
     rating: { type: Number, default: 4.5, min: 0, max: 5 },
     reviewCount: { type: Number, default: 0 },
+    latitude: { type: Number, required: false },
+    longitude: { type: Number, required: false },
+
     about: { type: String },
-    googleMapsUrl: { type: String },
+    googleMapsUrl: { type: String, required: false },
     emergency: { type: Boolean, default: false },
     isClaimed: { type: Boolean, default: false },
     isDeleted: { type: Boolean, default: false },

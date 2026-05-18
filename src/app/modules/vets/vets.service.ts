@@ -27,16 +27,14 @@ const getAllVets = async (query: Record<string, unknown>) => {
       { area: { $regex: filters.search, $options: 'i' } },
     ];
   }
-
   const vets = await Vet.find(filter)
     .sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 })
     .skip(skip)
     .limit(limit)
     .lean();
 
-  const total = await Vet.countDocuments(filter);
-
-  return {
+  const total = await Vet.countDocuments();
+  const result = {
     data: vets,
     meta: {
       total,
@@ -45,6 +43,10 @@ const getAllVets = async (query: Record<string, unknown>) => {
       pages: Math.ceil(total / limit),
     },
   };
+
+  console.log(total, 'filter');
+
+  return result;
 };
 
 const getSingleVet = async (id: string) => {

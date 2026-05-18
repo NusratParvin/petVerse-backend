@@ -63,6 +63,8 @@ export type TVet = {
   priceRange: TPriceRange;
   rating: number;
   reviewCount: number;
+  latitude?: number;
+  longitude?: number;
   about?: string;
   googleMapsUrl?: string;
   isClaimed?: boolean;

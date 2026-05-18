@@ -10,6 +10,7 @@ import { PageRoutes } from '../modules/page/page.route';
 import { ReactionsRoutes } from '../modules/reactions/reactions.route';
 import { PetRoutes } from '../modules/pets/pets.route';
 import { VetRoutes } from '../modules/vets/vets.route';
+import { ImportWizardRoutes } from '../modules/import-wizard/importWizard.route';
 
 const router = Router();
 
@@ -25,6 +26,7 @@ const moduleRoutes = [
   { path: '/reactions', route: ReactionsRoutes },
   { path: '/pets', route: PetRoutes },
   { path: '/vets', route: VetRoutes },
+  { path: '/import-wizard', route: ImportWizardRoutes },
 ];
 
 moduleRoutes.forEach((route) => router.use(route.path, route.route));

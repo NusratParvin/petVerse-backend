@@ -25,6 +25,11 @@ export type THealthRecordType =
   | 'vet-visit'
   | 'medication'
   | 'grooming'
+  | 'lab-test'
+  | 'surgery'
+  | 'imaging'
+  | 'hospitalization'
+  // | 'injection'
   | 'other';
 
 export type THealthRecord = {

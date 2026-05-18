@@ -16,13 +16,14 @@ const createVet = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllVets = catchAsync(async (req: Request, res: Response) => {
-  console.log(req.query);
+  // console.log(req.query);
   const vets = await VetService.getAllVets(req.query);
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: 'Vets retrieved successfully',
-    data: vets,
+    data: vets.data,
+    meta: vets.meta,
   });
 });
 
@@ -37,6 +38,12 @@ const getSingleVet = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateVet = catchAsync(async (req: Request, res: Response) => {
+  // console.log(req.params.id, req.body);
+  // const result = VetValidation.updateVetSchema.safeParse({ body: req.body });
+
+  // if (!result.success) {
+  //   console.log('Validation errors:', result.error.flatten());
+  // }
   const vet = await VetService.updateVet(req.params.id, req.body);
   sendResponse(res, {
     statusCode: httpStatus.OK,
