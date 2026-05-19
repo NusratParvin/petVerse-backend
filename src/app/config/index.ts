@@ -18,5 +18,6 @@ export default {
   twilio_acc_sid: process.env.TWILIO_ACCOUNT_SID,
   twilio_auth_token: process.env.TWILIO_AUTH_TOKEN,
   twilio_whatsapp_from: process.env.TWILIO_WHATSAPP_FROM,
-  openai_api_key: process.env.OPENAI_API_KEY,
+  groq_api_key: process.env.GROQ_API_KEY,
+  gemini_api_key: process.env.GEMINI_API_KEY,
 };

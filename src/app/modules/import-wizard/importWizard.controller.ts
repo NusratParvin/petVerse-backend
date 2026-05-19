@@ -9,7 +9,7 @@ const parseVetNotes = catchAsync(async (req: Request, res: Response) => {
   // multer puts files in req.files, text field comes in req.body
   const files = (req.files as Express.Multer.File[]) ?? [];
   const text: string = req.body.text ?? '';
-  // console.log(files, 'files');
+  console.log(text, 'text');
   if (files.length === 0 && text.trim().length < 5) {
     return sendResponse(res, {
       statusCode: httpStatus.BAD_REQUEST,
