@@ -24,6 +24,7 @@ const healthRecordSchema = new Schema({
   notes: { type: String },
   cost: { type: Number },
   vetName: { type: String },
+  clinicName: { type: String },
 });
 
 const petSchema = new Schema<TPet>(

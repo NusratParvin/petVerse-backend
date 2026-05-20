@@ -40,6 +40,7 @@ export type THealthRecord = {
   notes?: string;
   cost?: number;
   vetName?: string;
+  clinicName?: string;
 };
 
 export type TPet = {

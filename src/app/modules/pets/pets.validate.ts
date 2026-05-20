@@ -71,6 +71,7 @@ const addHealthRecordValidationSchema = z.object({
   notes: z.string().optional(),
   cost: z.number().optional(),
   vetName: z.string().optional(),
+  clinicName: z.string().optional(),
 });
 
 const updateHealthRecordValidationSchema = z.object({
@@ -94,6 +95,7 @@ const updateHealthRecordValidationSchema = z.object({
   notes: z.string().optional(),
   cost: z.number().optional(),
   vetName: z.string().optional(),
+  clinicName: z.string().optional(),
 });
 
 export const PetValidation = {
