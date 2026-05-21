@@ -3,39 +3,31 @@ import sendResponse from '../../utils/sendResponse';
 import { ImportWizardService } from './importWizard.service';
 import httpStatus from 'http-status';
 import { catchAsync } from '../../utils/catchAsync';
+import { validateImportWizardData } from './helpers/validateImportWizardData';
 
 const parseVetNotes = catchAsync(async (req: Request, res: Response) => {
-  // console.log(req.files);
-  // multer puts files in req.files, text field comes in req.body
   const files = (req.files as Express.Multer.File[]) ?? [];
   const text: string = req.body.text ?? '';
-  console.log(text, 'text');
-  if (files.length === 0 && text.trim().length < 5) {
+
+  const validateImportWizardDataError = validateImportWizardData(files, text);
+  // console.log(text, 'text');
+  if (validateImportWizardDataError) {
     return sendResponse(res, {
       statusCode: httpStatus.BAD_REQUEST,
       success: false,
-      message: 'Please upload at least one image or paste some text.',
+      message: validateImportWizardDataError,
       data: null,
     });
   }
 
-  if (text.length > 8000) {
-    return sendResponse(res, {
-      statusCode: httpStatus.BAD_REQUEST,
-      success: false,
-      message: 'Text is too long. Please keep it under 8000 characters.',
-      data: null,
-    });
-  }
-
-  // Pass file buffers + mimetype — service decides text vs vision
-  const fileMeta = files.map((f) => ({
+  const fileInfo = files.map((f) => ({
     buffer: f.buffer,
     mimetype: f.mimetype,
   }));
+
   // console.log(fileMeta, 'filemeta');
   const result = await ImportWizardService.parseVetNotes(
-    fileMeta,
+    fileInfo,
     text || undefined,
   );
   console.log(result, 'result');
