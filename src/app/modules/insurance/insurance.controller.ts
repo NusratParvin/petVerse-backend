@@ -1,51 +1,74 @@
 import { Request, Response } from 'express';
-import catchAsync from '../../utils/catchAsync';
 import sendResponse from '../../utils/sendResponse';
-import httpStatus from 'http-status';
 import { InsuranceService } from './insurance.service';
+import httpStatus from 'http-status';
+import { catchAsync } from '../../utils/catchAsync';
 
-const getInsuranceRecommendation = catchAsync(
-  async (req: Request, res: Response) => {
-    const { petName, species, breed, ageYears, existingConditions, budget } =
-      req.body;
+const getAllProviders = catchAsync(async (req: Request, res: Response) => {
+  const data = await InsuranceService.getAllProviders();
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Providers fetched',
+    data,
+  });
+});
 
-    // Validation
-    if (!petName || !species || !ageYears || !budget) {
-      return sendResponse(res, {
-        statusCode: httpStatus.BAD_REQUEST,
-        success: false,
-        message: 'Missing required fields: petName, species, ageYears, budget',
-        data: null,
-      });
-    }
+const getProviderById = catchAsync(async (req: Request, res: Response) => {
+  const data = await InsuranceService.getProviderById(req.params.id);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Provider fetched',
+    data,
+  });
+});
 
-    if (!['low', 'medium', 'high'].includes(budget)) {
-      return sendResponse(res, {
-        statusCode: httpStatus.BAD_REQUEST,
-        success: false,
-        message: "Budget must be 'low', 'medium', or 'high'",
-        data: null,
-      });
-    }
+const createProvider = catchAsync(async (req: Request, res: Response) => {
+  const data = await InsuranceService.createProvider(req.body);
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: 'Provider created',
+    data,
+  });
+});
 
-    const result = await InsuranceService.getRecommendation({
-      petName,
-      species,
-      breed,
-      ageYears: Number(ageYears),
-      existingConditions,
-      budget,
-    });
+const updateProvider = catchAsync(async (req: Request, res: Response) => {
+  const data = await InsuranceService.updateProvider(req.params.id, req.body);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Provider updated',
+    data,
+  });
+});
 
-    sendResponse(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: 'Insurance recommendation generated successfully',
-      data: result,
-    });
-  },
-);
+const deleteProvider = catchAsync(async (req: Request, res: Response) => {
+  await InsuranceService.deleteProvider(req.params.id);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Provider deleted',
+    data: null,
+  });
+});
+
+const getAIRecommendation = catchAsync(async (req: Request, res: Response) => {
+  const data = await InsuranceService.getAIRecommendation(req.body);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Recommendation generated',
+    data,
+  });
+});
 
 export const InsuranceController = {
-  getInsuranceRecommendation,
+  getAllProviders,
+  getProviderById,
+  createProvider,
+  updateProvider,
+  deleteProvider,
+  getAIRecommendation,
 };
