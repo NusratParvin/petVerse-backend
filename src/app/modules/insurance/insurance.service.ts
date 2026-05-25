@@ -83,7 +83,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
   });
 
   const text = response.text;
-
+  // console.log(text);
   if (!text) {
     throw new Error('Empty Gemini response');
   }

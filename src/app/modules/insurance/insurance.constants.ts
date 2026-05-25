@@ -5,12 +5,6 @@ export const INSURANCE_BADGES = [
   'mostFlexible',
   'bestPreventive',
   'budgetPick',
-
-  // 'Best Value',
-  // 'Most Popular',
-  // 'Premium',
-  // 'New',
-  // 'Top Rated',
 ] as const;
 
 export const COVERAGE_TYPES = [

@@ -55,12 +55,12 @@ const deleteProvider = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAIRecommendation = catchAsync(async (req: Request, res: Response) => {
-  const data = await InsuranceService.getAIRecommendation(req.body);
+  const result = await InsuranceService.getAIRecommendation(req.body);
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: 'Recommendation generated',
-    data,
+    data: result,
   });
 });
 
