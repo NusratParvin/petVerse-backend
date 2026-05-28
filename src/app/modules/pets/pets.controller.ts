@@ -85,13 +85,24 @@ const addHealthRecord = catchAsync(async (req, res) => {
 const getUpcomingReminders = catchAsync(async (req, res) => {
   const userId = req.user.id;
   //   const userId = '678299d038fe32f2152a5e42';
-
+  // console.log(userId);
   const result = await PetServices.getUpcomingRemindersFromDB(userId);
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: 'Upcoming reminders fetched successfully',
     data: result,
+  });
+});
+
+const getAllReminders = catchAsync(async (req, res) => {
+  const userId = req.user.id;
+  const reminders = await PetServices.getAllRemindersFromDB(userId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    data: reminders,
   });
 });
 
@@ -161,6 +172,7 @@ export const PetControllers = {
   addHealthRecord,
   getUpcomingReminders,
   findByMicrochip,
+  getAllReminders,
   updateHealthRecord,
   deleteHealthRecord,
   getHealthRecord,

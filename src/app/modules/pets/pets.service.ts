@@ -136,6 +136,7 @@ const getAllUpcomingRemindersFromDB = async () => {
 };
 
 const getUpcomingRemindersFromDB = async (userId: string) => {
+  console.log(userId);
   const today = new Date();
   const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
 
@@ -163,19 +164,74 @@ const getUpcomingRemindersFromDB = async (userId: string) => {
             (24 * 60 * 60 * 1000),
         );
 
+        // Determine urgency based on days left
+        let urgency = 'low';
+        if (daysLeft <= 2) urgency = 'high';
+        else if (daysLeft <= 5) urgency = 'medium';
+
         reminders.push({
-          petName: pet.name,
-          petPhoto: pet.profilePhoto,
-          recordTitle: record.title,
-          type: record.type,
-          nextDueDate: record.nextDueDate,
-          daysLeft,
+          pet: pet.name,
+          record: record.title,
+          vet: record.vetName || 'Veterinary Clinic',
+          type: record.type, // Frontend will use this for icon
+          dueDate: record.nextDueDate.toISOString().split('T')[0],
+          dueText: `Due in ${daysLeft} day${daysLeft > 1 ? 's' : ''}`,
+          urgency: urgency,
+          whatsapp: pet.whatsappAlerts || false,
         });
       }
     });
   });
 
+  console.log(reminders);
   return reminders;
+};
+
+const getAllRemindersFromDB = async (userId: string) => {
+  const pets = await Pet.find({
+    owner: userId,
+    isDeleted: false,
+    'healthRecords.nextDueDate': { $exists: true },
+  });
+
+  const reminders: any = [];
+
+  pets.forEach((pet) => {
+    pet.healthRecords.forEach((record) => {
+      if (record.nextDueDate) {
+        const today = new Date();
+        const daysLeft = Math.ceil(
+          (record.nextDueDate.getTime() - today.getTime()) /
+            (24 * 60 * 60 * 1000),
+        );
+
+        let urgency = 'low';
+        if (daysLeft < 0) urgency = 'overdue';
+        else if (daysLeft <= 2) urgency = 'high';
+        else if (daysLeft <= 5) urgency = 'medium';
+
+        reminders.push({
+          pet: pet.name,
+          record: record.title,
+          vet: record.vetName || 'Veterinary Clinic',
+          type: record.type,
+          dueDate: record.nextDueDate.toISOString().split('T')[0],
+          dueText:
+            daysLeft < 0
+              ? `Overdue by ${Math.abs(daysLeft)} days`
+              : `Due in ${daysLeft} day${daysLeft > 1 ? 's' : ''}`,
+          urgency: urgency,
+          whatsapp: pet.whatsappAlerts || false,
+        });
+      }
+    });
+  });
+
+  const result = reminders.sort(
+    (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(),
+  );
+
+  return result;
 };
 
 const deleteHealthRecordFromDB = async (
@@ -235,6 +291,7 @@ export const PetServices = {
   addHealthRecordIntoDB,
   getAllUpcomingRemindersFromDB,
   getUpcomingRemindersFromDB,
+  getAllRemindersFromDB,
   getHealthRecordIntoDB,
   updateHealthRecordIntoDB,
   deleteHealthRecordFromDB,

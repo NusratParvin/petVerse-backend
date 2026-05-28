@@ -29,6 +29,12 @@ router.get(
 );
 
 router.get(
+  '/reminders/all',
+  auth(USER_ROLE.USER),
+  PetControllers.getAllReminders,
+);
+
+router.get(
   '/:id',
   auth(USER_ROLE.USER, USER_ROLE.ADMIN),
   PetControllers.getSinglePet,

@@ -14,18 +14,30 @@ export const sendWhatsApp = async (
   dueDate: Date,
   vetName?: string,
 ) => {
-  await twilioClient.messages.create({
-    contentSid: 'HX674e9f417150ebd3c1d0b93b913870a6',
-    contentVariables: JSON.stringify({
-      petName,
-      recordTitle,
-      daysLeft: String(daysLeft),
-      dueDate: dueDate.toDateString(),
-      vetName: vetName || 'N/A',
-    }),
-    from: `whatsapp:${config.twilio_whatsapp_from}`,
-    to: `whatsapp:${phone}`,
-  });
+  console.log(
+    `📱 Sending WhatsApp to: ${phone} for ${petName} - ${recordTitle}`,
+  );
+
+  try {
+    const message = await twilioClient.messages.create({
+      contentSid: 'HX674e9f417150ebd3c1d0b93b913870a6',
+      contentVariables: JSON.stringify({
+        petName,
+        recordTitle,
+        daysLeft: String(daysLeft),
+        dueDate: dueDate.toDateString(),
+        vetName: vetName || 'N/A',
+      }),
+      from: `whatsapp:${config.twilio_whatsapp_from}`,
+      to: `whatsapp:${phone}`,
+    });
+
+    console.log(`✅ WhatsApp sent successfully! SID: ${message.sid}`);
+    return message;
+  } catch (error) {
+    console.error(`❌ WhatsApp failed for ${phone}:`, error);
+    throw error;
+  }
 };
 
 export const sendReminderEmail = async (
