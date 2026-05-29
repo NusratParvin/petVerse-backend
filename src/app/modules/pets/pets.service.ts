@@ -212,8 +212,10 @@ const getAllRemindersFromDB = async (userId: string) => {
 
         reminders.push({
           pet: pet.name,
+          species: pet.species,
           record: record.title,
-          vet: record.vetName || 'Veterinary Clinic',
+          vet: record.vetName || 'Anonymous',
+          clinicName: record.clinicName || 'N/A',
           type: record.type,
           dueDate: record.nextDueDate.toISOString().split('T')[0],
           dueText:
@@ -227,10 +229,10 @@ const getAllRemindersFromDB = async (userId: string) => {
     });
   });
 
-  const result = reminders.sort(
-    (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(),
+  const result = [...reminders].sort(
+    (a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime(),
   );
-
+  // console.log(result);
   return result;
 };
 
