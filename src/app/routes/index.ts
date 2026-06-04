@@ -13,6 +13,7 @@ import { VetRoutes } from '../modules/vets/vets.route';
 import { ImportWizardRoutes } from '../modules/import-wizard/importWizard.route';
 import { InsuranceReviewRoutes } from '../modules/insuranceReview/insuranceReview.route';
 import { InsuranceRoutes } from '../modules/insurance/insurance.route';
+import { LostFoundRoutes } from '../modules/lostFound/lostFound.route';
 
 const router = Router();
 
@@ -31,6 +32,7 @@ const moduleRoutes = [
   { path: '/import-wizard', route: ImportWizardRoutes },
   { path: '/insurance', route: InsuranceRoutes },
   { path: '/insurance-review', route: InsuranceReviewRoutes },
+  { path: '/lost-found', route: LostFoundRoutes },
 ];
 
 moduleRoutes.forEach((route) => router.use(route.path, route.route));

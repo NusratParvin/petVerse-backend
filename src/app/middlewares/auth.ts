@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { NextFunction, Request, Response } from 'express';
 import httpStatus from 'http-status';
 import AppError from '../errors/AppError';
@@ -24,8 +25,8 @@ const auth = (...requiredRoles: TUserRole[]) => {
       config.jwt_access_secret as string,
     ) as JwtPayload;
 
-    const { role, id } = decoded;
-
+    const { role, id, email, name } = decoded;
+    // console.log(decoded, 'decoded');
     const user = await User.isUserExistsById(id);
 
     if (!user) {
@@ -57,6 +58,7 @@ const auth = (...requiredRoles: TUserRole[]) => {
     }
 
     req.user = decoded as JwtPayload;
+    // console.log(req.user);
     next();
   });
 };

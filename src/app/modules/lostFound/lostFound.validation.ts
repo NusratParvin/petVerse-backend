@@ -10,7 +10,7 @@ export const createLostFoundValidation = z.object({
   description: z.string().min(10),
   emirate: z.enum(UAE_EMIRATES),
   area: z.string(),
-  dateLostFound: z.string(), // ISO string from frontend
+  dateLostFound: z.string(),
   photos: z.array(z.string()).optional(),
   microchipNumber: z.string().optional(),
   reward: z.number().optional(),

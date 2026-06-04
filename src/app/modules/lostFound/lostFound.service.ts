@@ -12,13 +12,14 @@ type TFilters = {
 };
 
 const getAllPosts = async (filters: TFilters) => {
+  // console.log(filters);
   const query: Record<string, unknown> = {};
 
   if (filters.type) query.type = filters.type;
   if (filters.emirate) query.emirate = filters.emirate;
   if (filters.species) query.species = filters.species;
   if (filters.status) query.status = filters.status;
-  else query.status = 'active'; // default: only active
+  else query.status = 'active';
 
   if (filters.search) {
     query.$or = [
@@ -30,9 +31,14 @@ const getAllPosts = async (filters: TFilters) => {
     ];
   }
 
-  return await LostFound.find(query)
+  // console.log(query);
+
+  const res = await LostFound.find(query)
     .populate('postedBy', 'name email profilePhoto')
     .sort({ createdAt: -1 });
+  // console.log(res, 'res');
+
+  return res;
 };
 
 const getPostById = async (id: string) => {
@@ -47,9 +53,17 @@ const getPostById = async (id: string) => {
 const createPost = async (
   userId: string,
   posterName: string,
+  posterEmail: string,
   payload: Partial<TLostFound>,
 ) => {
-  return await LostFound.create({ ...payload, postedBy: userId, posterName });
+  const res = await LostFound.create({
+    ...payload,
+    postedBy: userId,
+    posterName,
+    posterEmail,
+  });
+  // console.log(res, 'res');
+  return res;
 };
 
 const updatePost = async (

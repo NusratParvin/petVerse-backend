@@ -9,8 +9,9 @@ import {
 
 const lostFoundSchema = new Schema<TLostFound>(
   {
-    postedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    postedBy: { type: Schema.Types.ObjectId, ref: 'user', required: true },
     posterName: { type: String, required: true, trim: true },
+    posterEmail: { type: String, required: true, trim: true },
     posterPhone: { type: String, required: true, trim: true },
     type: { type: String, enum: POST_TYPES, required: true },
     status: { type: String, enum: POST_STATUSES, default: 'active' },

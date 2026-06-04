@@ -14,10 +14,11 @@ export type TPostStatus = (typeof POST_STATUSES)[number];
 export type TLostFound = {
   postedBy: Types.ObjectId;
   posterName: string;
+  posterEmail: string;
   posterPhone: string;
-  type: TPostType; // 'lost' | 'found'
-  status: TPostStatus; // 'active' | 'resolved'
-  petName?: string; // optional for 'found' posts
+  type: TPostType;
+  status: TPostStatus;
+  petName?: string;
   species: TPetSpecies;
   breed?: string;
   color: string;

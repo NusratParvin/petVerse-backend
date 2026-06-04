@@ -6,6 +6,7 @@ import { catchAsync } from '../../utils/catchAsync';
 
 const getAllPosts = catchAsync(async (req: Request, res: Response) => {
   const { type, emirate, species, status, search } = req.query;
+  console.log(req.query);
   const data = await LostFoundService.getAllPosts({
     type: type as any,
     emirate: emirate as any,
@@ -32,9 +33,11 @@ const getPostById = catchAsync(async (req: Request, res: Response) => {
 });
 
 const createPost = catchAsync(async (req: Request, res: Response) => {
+  // console.log(req.user, req.body);
   const data = await LostFoundService.createPost(
-    req.user._id as string,
+    req.user.id as string,
     req.user.name as string,
+    req.user.email as string,
     req.body,
   );
   sendResponse(res, {
