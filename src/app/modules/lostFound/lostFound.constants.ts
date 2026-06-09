@@ -3,6 +3,7 @@ export const PET_SPECIES = [
   'dog',
   'cat',
   'bird',
+  'fish',
   'rabbit',
   'reptile',
   'other',

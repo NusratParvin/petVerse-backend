@@ -7,48 +7,54 @@ import auth from '../../middlewares/auth';
 
 const router = express.Router();
 
-// Create a comment
+// ─── create ──────────────────────────────────────────────────────────────────
 router.post(
   '/',
   auth(USER_ROLE.USER, USER_ROLE.ADMIN),
   zodValidationRequest(CommentValidation.createCommentValidationSchema),
   CommentControllers.createComment,
 );
-router.get('/', auth(USER_ROLE.ADMIN), CommentControllers.getAllComments);
 
-// Get comments by article ID (this is likely the missing route)
+// ─── get by target ────────────────────────────────────────────────────────────
+// works for both: /comments/Article/:id  and  /comments/LostFound/:id
 router.get(
-  '/article/:articleId',
+  '/:targetType/:targetId',
   auth(USER_ROLE.USER, USER_ROLE.ADMIN),
-  CommentControllers.getCommentsByArticleId,
+  CommentControllers.getCommentsByTarget,
 );
 
-// Update a comment
+// ─── admin: get all (with optional filters) ───────────────────────────────────
+// GET /comments?targetType=LostFound&isSighting=true
+router.get('/', auth(USER_ROLE.ADMIN), CommentControllers.getAllComments);
+
+// ─── update content ───────────────────────────────────────────────────────────
 router.patch(
   '/:id',
-  auth(USER_ROLE.USER),
+  auth(USER_ROLE.USER, USER_ROLE.ADMIN),
   zodValidationRequest(CommentValidation.updateCommentValidationSchema),
   CommentControllers.updateComment,
 );
 
-// Delete a comment
-router.delete(
-  '/:id',
-  auth(USER_ROLE.USER, USER_ROLE.ADMIN),
-  CommentControllers.deleteComment,
-);
-
-// Upvote/Downvote a comment
+// ─── vote ─────────────────────────────────────────────────────────────────────
 router.patch(
   '/:id/vote',
   auth(USER_ROLE.USER, USER_ROLE.ADMIN),
   CommentControllers.updateCommentVotes,
 );
 
-router.get(
-  '/article/:articleId/comments',
+// ─── mark helpful lead (post owner only) ─────────────────────────────────────
+router.patch(
+  '/:id/helpful-lead',
   auth(USER_ROLE.USER, USER_ROLE.ADMIN),
-  CommentControllers.getCommentsByArticleId,
+  zodValidationRequest(CommentValidation.markHelpfulLeadValidationSchema),
+  CommentControllers.markHelpfulLead,
+);
+
+// ─── soft delete ──────────────────────────────────────────────────────────────
+router.delete(
+  '/:id',
+  auth(USER_ROLE.USER, USER_ROLE.ADMIN),
+  CommentControllers.deleteComment,
 );
 
 export const CommentRoutes = router;

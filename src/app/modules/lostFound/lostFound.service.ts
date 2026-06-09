@@ -71,15 +71,18 @@ const updatePost = async (
   userId: string,
   payload: Partial<TLostFound>,
 ) => {
+  console.log(payload);
   const post = await LostFound.findById(id);
   if (!post) throw new AppError(httpStatus.NOT_FOUND, 'Post not found');
   if (post.postedBy.toString() !== userId)
     throw new AppError(httpStatus.FORBIDDEN, 'Not authorized');
 
-  return await LostFound.findByIdAndUpdate(id, payload, {
+  const res = await LostFound.findByIdAndUpdate(id, payload, {
     new: true,
     runValidators: true,
   });
+  console.log(res);
+  return res;
 };
 
 const markResolved = async (id: string, userId: string) => {
@@ -88,11 +91,13 @@ const markResolved = async (id: string, userId: string) => {
   if (post.postedBy.toString() !== userId)
     throw new AppError(httpStatus.FORBIDDEN, 'Not authorized');
 
-  return await LostFound.findByIdAndUpdate(
+  const res = await LostFound.findByIdAndUpdate(
     id,
     { status: 'resolved' },
     { new: true },
   );
+
+  return res;
 };
 
 const deletePost = async (id: string, userId: string, role: string) => {
@@ -101,11 +106,12 @@ const deletePost = async (id: string, userId: string, role: string) => {
   if (post.postedBy.toString() !== userId && role !== 'admin')
     throw new AppError(httpStatus.FORBIDDEN, 'Not authorized');
 
-  return await LostFound.findByIdAndUpdate(
+  const res = await LostFound.findByIdAndUpdate(
     id,
     { isDeleted: true },
     { new: true },
   );
+  return res;
 };
 
 export const LostFoundService = {

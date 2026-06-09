@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response } from 'express';
 import sendResponse from '../../utils/sendResponse';
 import { LostFoundService } from './lostFound.service';
@@ -6,7 +7,7 @@ import { catchAsync } from '../../utils/catchAsync';
 
 const getAllPosts = catchAsync(async (req: Request, res: Response) => {
   const { type, emirate, species, status, search } = req.query;
-  console.log(req.query);
+  // console.log(req.query);
   const data = await LostFoundService.getAllPosts({
     type: type as any,
     emirate: emirate as any,
@@ -51,7 +52,7 @@ const createPost = catchAsync(async (req: Request, res: Response) => {
 const updatePost = catchAsync(async (req: Request, res: Response) => {
   const data = await LostFoundService.updatePost(
     req.params.id,
-    req.user._id as string,
+    req.user.id as string,
     req.body,
   );
   sendResponse(res, {
@@ -65,7 +66,7 @@ const updatePost = catchAsync(async (req: Request, res: Response) => {
 const markResolved = catchAsync(async (req: Request, res: Response) => {
   const data = await LostFoundService.markResolved(
     req.params.id,
-    req.user._id as string,
+    req.user.id as string,
   );
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -78,7 +79,7 @@ const markResolved = catchAsync(async (req: Request, res: Response) => {
 const deletePost = catchAsync(async (req: Request, res: Response) => {
   await LostFoundService.deletePost(
     req.params.id,
-    req.user._id as string,
+    req.user.id as string,
     req.user.role as string,
   );
   sendResponse(res, {

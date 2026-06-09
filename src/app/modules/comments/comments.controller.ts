@@ -3,14 +3,20 @@ import { catchAsync } from '../../utils/catchAsync';
 import sendResponse from '../../utils/sendResponse';
 import AppError from '../../errors/AppError';
 import { CommentServices } from './comments.service';
+import { TTargetType } from './comments.interface';
 
-// Create a comment
+// ─── create ──────────────────────────────────────────────────────────────────
+
 const createComment = catchAsync(async (req, res) => {
   const commenterId = req.user.id;
   const commentData = {
     ...req.body,
+    commenter: {
+      ...req.body.commenter,
+      commenterId,
+    },
   };
-  console.log(commentData);
+
   const result = await CommentServices.createCommentIntoDB(
     commentData,
     commenterId,
@@ -24,12 +30,19 @@ const createComment = catchAsync(async (req, res) => {
   });
 });
 
-// Get comments by articleId
-const getCommentsByArticleId = catchAsync(async (req, res) => {
-  const { articleId } = req.params;
+// ─── get by target ────────────────────────────────────────────────────────────
+// GET /comments/:targetType/:targetId
+// e.g. /comments/Article/abc123
+//      /comments/LostFound/xyz789
 
-  const result = await CommentServices.getCommentsByArticleIdFromDB(articleId);
-  console.log(result);
+const getCommentsByTarget = catchAsync(async (req, res) => {
+  const { targetType, targetId } = req.params;
+
+  const result = await CommentServices.getCommentsByTargetFromDB(
+    targetType as TTargetType,
+    targetId,
+  );
+
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
@@ -38,12 +51,13 @@ const getCommentsByArticleId = catchAsync(async (req, res) => {
   });
 });
 
-// Update a comment
+// ─── update content ───────────────────────────────────────────────────────────
+
 const updateComment = catchAsync(async (req, res) => {
   const commentId = req.params.id;
   const updateData = req.body;
 
-  const updatedComment = await CommentServices.updateCommentIntoDB(
+  const result = await CommentServices.updateCommentIntoDB(
     commentId,
     updateData,
   );
@@ -52,17 +66,18 @@ const updateComment = catchAsync(async (req, res) => {
     statusCode: httpStatus.OK,
     success: true,
     message: 'Comment updated successfully',
-    data: updatedComment,
+    data: result,
   });
 });
 
-// Vote on a comment
+// ─── vote ─────────────────────────────────────────────────────────────────────
+
 const updateCommentVotes = catchAsync(async (req, res) => {
   const commentId = req.params.id;
   const { voteType } = req.body;
   const userId = req.user.id;
 
-  const updatedComment = await CommentServices.updateCommentVotesIntoDB(
+  const result = await CommentServices.updateCommentVotesIntoDB(
     commentId,
     voteType,
     userId,
@@ -71,22 +86,19 @@ const updateCommentVotes = catchAsync(async (req, res) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: 'Comment vote updated successfully',
-    data: updatedComment,
+    message: 'Vote updated successfully',
+    data: result,
   });
 });
 
-// Delete a comment
+// ─── soft delete ──────────────────────────────────────────────────────────────
+
 const deleteComment = catchAsync(async (req, res) => {
   const { id: commentId } = req.params;
-  const { articleId } = req.body;
 
-  const deletedComment = await CommentServices.deleteCommentFromDB(
-    commentId,
-    articleId,
-  );
+  const result = await CommentServices.deleteCommentFromDB(commentId);
 
-  if (!deletedComment) {
+  if (!result) {
     throw new AppError(httpStatus.NOT_FOUND, 'Comment not found');
   }
 
@@ -94,26 +106,57 @@ const deleteComment = catchAsync(async (req, res) => {
     statusCode: httpStatus.OK,
     success: true,
     message: 'Comment deleted successfully',
-    data: deletedComment,
+    data: result,
   });
 });
 
-const getAllComments = catchAsync(async (req, res) => {
-  const result = await CommentServices.getAllCommentsFromDB();
+// ─── mark helpful lead ────────────────────────────────────────────────────────
+// only the post owner should call this — enforce on frontend for now
+
+const markHelpfulLead = catchAsync(async (req, res) => {
+  const { id: commentId } = req.params;
+  const { isHelpfulLead } = req.body;
+
+  const result = await CommentServices.markHelpfulLeadIntoDB(
+    commentId,
+    isHelpfulLead,
+  );
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: 'All Comments retrieved successfully',
+    message: 'Helpful lead updated',
+    data: result,
+  });
+});
+
+// ─── admin: all comments ──────────────────────────────────────────────────────
+// GET /comments?targetType=LostFound&isSighting=true
+
+const getAllComments = catchAsync(async (req, res) => {
+  const { targetType, isSighting, isHelpfulLead } = req.query;
+
+  const result = await CommentServices.getAllCommentsFromDB({
+    targetType: targetType as TTargetType | undefined,
+    isSighting: isSighting !== undefined ? isSighting === 'true' : undefined,
+    isHelpfulLead:
+      isHelpfulLead !== undefined ? isHelpfulLead === 'true' : undefined,
+  });
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'All comments retrieved successfully',
     data: result,
   });
 });
 
 export const CommentControllers = {
   createComment,
-  getCommentsByArticleId,
+  getCommentsByTarget,
   updateComment,
   updateCommentVotes,
   deleteComment,
+  markHelpfulLead,
   getAllComments,
 };
