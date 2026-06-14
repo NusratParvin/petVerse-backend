@@ -36,12 +36,14 @@ const createComment = catchAsync(async (req, res) => {
 //      /comments/LostFound/xyz789
 
 const getCommentsByTarget = catchAsync(async (req, res) => {
-  const { targetType, targetId } = req.params;
+  const { targetType, targetId, page } = req.params;
 
   const result = await CommentServices.getCommentsByTargetFromDB(
     targetType as TTargetType,
     targetId,
+    page,
   );
+  console.log(result);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,

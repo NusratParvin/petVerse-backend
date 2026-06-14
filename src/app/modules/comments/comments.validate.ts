@@ -42,10 +42,15 @@ const createCommentValidationSchema = z.object({
   isSighting: z.boolean().optional().default(false),
   sightingLocation: z.string().optional().default(''),
   sightingPhoto: z.string().optional().default(''),
+  parentId: z.string().optional().nullable().default(null),
 });
 
 const updateCommentValidationSchema = z.object({
   content: z.string().nonempty({ message: 'Comment content is required' }),
+  sightingLocation: z.string().optional(),
+  sightingPhoto: z.string().optional(),
+  isSighting: z.boolean().optional(),
+  parentId: z.string().optional().nullable(),
 });
 
 const markHelpfulLeadValidationSchema = z.object({

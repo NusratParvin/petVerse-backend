@@ -18,7 +18,7 @@ router.post(
 // ─── get by target ────────────────────────────────────────────────────────────
 // works for both: /comments/Article/:id  and  /comments/LostFound/:id
 router.get(
-  '/:targetType/:targetId',
+  '/:targetType/:targetId/:page',
   auth(USER_ROLE.USER, USER_ROLE.ADMIN),
   CommentControllers.getCommentsByTarget,
 );
