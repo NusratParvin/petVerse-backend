@@ -7,8 +7,6 @@ import httpStatus from 'http-status';
 import mongoose, { Types } from 'mongoose';
 import { TVoteType } from '../articles/articles.interface';
 
-// ─── helpers  ──────
-
 // push comment id into the parent document's comments array
 const pushCommentToParent = async (
   targetType: TTargetType,
@@ -42,7 +40,7 @@ const createCommentIntoDB = async (payload: TComment, userId: string) => {
       profilePhoto: payload.commenter.profilePhoto || '',
     },
   };
-
+  // console.log(commentData);
   const session = await mongoose.startSession();
   try {
     session.startTransaction();
@@ -72,135 +70,85 @@ const createCommentIntoDB = async (payload: TComment, userId: string) => {
 // ─── get by target  ─
 
 // used by both article comment section and lost & found comment section
-// const getCommentsByTargetFromDB = async (
-//   targetType: TTargetType,
-//   targetId: string,
-//   page: string,
-// ) => {
-//   // pre('find') hook filters isDeleted: false automatically
-//   const pageNumber = Number(page) || 1;
-//   const limit = 1;
-//   const skip = (pageNumber - 1) * 1;
-//   const comments = await Comment.find({ targetType, targetId })
-//     .sort({
-//       createdAt: -1,
-//     })
-//     .skip(skip)
-//     .limit(limit);
-
-//   const total = await Comment.countDocuments({
-//     targetType,
-//     targetId,
-//     isDeleted: false,
-//   });
-
-//   const hasMore = skip + limit < total;
-
-//   return { comments, total, hasMore };
-// };
-
 const getCommentsByTargetFromDB = async (
   targetType: TTargetType,
   targetId: string,
   page: string,
 ) => {
+  // pre('find') hook filters isDeleted: false automatically
+  console.log('type');
   const pageNumber = Number(page) || 1;
-  const limit = 10; // Root comments per page
-  const skip = (pageNumber - 1) * limit;
-
-  // Step 1: Get paginated ROOT comments only
-  const rootComments = await Comment.find({
-    targetType,
-    targetId,
-    $or: [{ parentId: { $exists: false } }, { parentId: null }],
-    isDeleted: false,
-  })
-    .sort({ createdAt: -1 }) // Newest first
+  const limit = 2;
+  const skip = (pageNumber - 1) * 2;
+  const comments = await Comment.find({ targetType, targetId, parentId: null })
+    .sort({
+      createdAt: -1,
+    })
     .skip(skip)
-    .limit(limit)
-    .lean();
+    .limit(limit);
 
-  if (!rootComments.length) {
-    return {
-      comments: [],
-      total: 0,
-      hasMore: false,
-    };
-  }
+  const commentIds = comments.map((c) => c._id);
+  const replyCounts = await Comment.aggregate([
+    {
+      $match: {
+        parentId: { $in: commentIds },
+        // parentId: new Types.ObjectId('6a2fbc4e9287193265ebb560'),
+        isDeleted: false,
+      },
+    },
+    {
+      $group: {
+        _id: '$parentId',
+        count: { $sum: 1 },
+      },
+    },
+  ]);
 
-  // Step 2: Get ALL replies for these root comments
-  const rootIds = rootComments.map((c) => c._id);
-  const allReplies = await Comment.find({
-    targetType,
-    targetId,
-    parentId: { $in: rootIds },
-    isDeleted: false,
-  })
-    .sort({ createdAt: 1 }) // Oldest first for replies
-    .lean();
+  // console.log(commentIds, 'commentIds');
+  console.log(replyCounts, 'replyCounts');
+  // console.log(replycountlookup, 'replycountlookup');
+  // console.log(commentsWithReplies, 'commentsWithReplies');
 
-  // Step 3: Build a map of ALL comments (roots + replies)
-  const commentMap = new Map();
-
-  // Add all root comments to map
-  rootComments.forEach((comment) => {
-    commentMap.set(comment._id.toString(), {
-      ...comment,
-      replies: [],
-    });
-  });
-
-  // Add all replies to map
-  allReplies.forEach((reply) => {
-    commentMap.set(reply._id.toString(), {
-      ...reply,
-      replies: [],
-    });
-  });
-
-  // Step 4: Build parent-child relationships
-  const nestedComments = [];
-
-  rootComments.forEach((root) => {
-    const rootNode = commentMap.get(root._id.toString());
-    nestedComments.push(rootNode);
-  });
-
-  allReplies.forEach((reply) => {
-    const parentId = reply.parentId?.toString();
-    if (parentId && commentMap.has(parentId)) {
-      const parent = commentMap.get(parentId);
-      const replyNode = commentMap.get(reply._id.toString());
-      parent.replies.push(replyNode);
-    }
-  });
-
-  // Step 5: Sort replies within each parent (oldest first)
-  const sortRepliesRecursively = (comments: any[]) => {
-    comments.forEach((comment) => {
-      if (comment.replies && comment.replies.length > 0) {
-        comment.replies.sort((a: any, b: any) => a.createdAt - b.createdAt);
-        sortRepliesRecursively(comment.replies);
+  const transformedComments: any = [];
+  comments.forEach((c) => {
+    replyCounts.forEach((r) => {
+      if (c._id.equals(r._id)) {
+        transformedComments.push({ ...c.toObject(), count: r.count });
       }
     });
-  };
-  sortRepliesRecursively(nestedComments);
+  });
 
-  // Step 6: Get total count for pagination
+  // console.log(transformedComments);
+
   const total = await Comment.countDocuments({
     targetType,
     targetId,
-    $or: [{ parentId: { $exists: false } }, { parentId: null }],
     isDeleted: false,
+    parentId: null,
   });
 
   const hasMore = skip + limit < total;
 
-  return {
-    comments: nestedComments,
-    total,
-    hasMore,
-  };
+  return { comments: transformedComments, total, hasMore };
+};
+
+const getRepliesByParentIdFromDB = async (parentId: string, page: string) => {
+  const pageNumber = Number(page);
+  const limit = 1;
+  const skip = (pageNumber - 1) * limit;
+
+  console.log(parentId, 'here');
+  const replies = await Comment.find({ parentId })
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    .lean();
+
+  const total = await Comment.countDocuments({ parentId, isDeleted: false });
+
+  const hasMore = skip + limit < total;
+
+  return { replies, hasMore, total };
 };
 
 // ─── update content
@@ -332,6 +280,7 @@ const getAllCommentsFromDB = async (query: {
 export const CommentServices = {
   createCommentIntoDB,
   getCommentsByTargetFromDB,
+  getRepliesByParentIdFromDB,
   updateCommentIntoDB,
   updateCommentVotesIntoDB,
   deleteCommentFromDB,

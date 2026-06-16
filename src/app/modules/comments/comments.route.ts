@@ -22,6 +22,11 @@ router.get(
   auth(USER_ROLE.USER, USER_ROLE.ADMIN),
   CommentControllers.getCommentsByTarget,
 );
+router.get(
+  '/replies/:parentId/:page',
+  auth(USER_ROLE.USER, USER_ROLE.ADMIN),
+  CommentControllers.getRepliesByParentId,
+);
 
 // ─── admin: get all (with optional filters) ───────────────────────────────────
 // GET /comments?targetType=LostFound&isSighting=true

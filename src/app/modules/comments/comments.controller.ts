@@ -43,12 +43,27 @@ const getCommentsByTarget = catchAsync(async (req, res) => {
     targetId,
     page,
   );
-  console.log(result);
+  // console.log(result);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: 'Comments retrieved successfully',
+    data: result,
+  });
+});
+
+const getRepliesByParentId = catchAsync(async (req, res) => {
+  console.log(req.params);
+  const { parentId, page } = req.params;
+  const result = await CommentServices.getRepliesByParentIdFromDB(
+    parentId,
+    page,
+  );
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Replies fetched successfully',
     data: result,
   });
 });
@@ -156,6 +171,7 @@ const getAllComments = catchAsync(async (req, res) => {
 export const CommentControllers = {
   createComment,
   getCommentsByTarget,
+  getRepliesByParentId,
   updateComment,
   updateCommentVotes,
   deleteComment,
