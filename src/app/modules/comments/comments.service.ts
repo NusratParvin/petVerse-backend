@@ -75,8 +75,7 @@ const getCommentsByTargetFromDB = async (
   targetId: string,
   page: string,
 ) => {
-  // pre('find') hook filters isDeleted: false automatically
-  console.log('type');
+  // console.log('type');
   const pageNumber = Number(page) || 1;
   const limit = 2;
   const skip = (pageNumber - 1) * 2;
@@ -105,9 +104,7 @@ const getCommentsByTargetFromDB = async (
   ]);
 
   // console.log(commentIds, 'commentIds');
-  console.log(replyCounts, 'replyCounts');
-  // console.log(replycountlookup, 'replycountlookup');
-  // console.log(commentsWithReplies, 'commentsWithReplies');
+  // console.log(replyCounts, 'replyCounts');
 
   const transformedComments: any = [];
   comments.forEach((c) => {
@@ -137,17 +134,39 @@ const getRepliesByParentIdFromDB = async (parentId: string, page: string) => {
   const limit = 1;
   const skip = (pageNumber - 1) * limit;
 
-  console.log(parentId, 'here');
-  const replies = await Comment.find({ parentId })
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limit)
-    .lean();
+  // console.log(parentId, 'here');
+  // const replies = await Comment.find({ parentId })
+  //   .sort({ createdAt: -1 })
+  //   .skip(skip)
+  //   .limit(limit)
+  //   .lean();
 
-  const total = await Comment.countDocuments({ parentId, isDeleted: false });
+  // const total = await Comment.countDocuments({ parentId, isDeleted: false });
 
+  const [result] = await Comment.aggregate([
+    {
+      $match: { parentId: parentId, isDeleted: false },
+    },
+    {
+      $facet: {
+        replies: [
+          { $sort: { createdAt: -1 } },
+          {
+            $skip: skip,
+          },
+          {
+            $limit: limit,
+          },
+        ],
+        totalCount: [{ $count: 'count' }],
+      },
+    },
+  ]);
+  const replies = result.replies;
+  const total = result.totalCount[0].count || 0;
   const hasMore = skip + limit < total;
 
+  console.log('✅ Final:', { repliesCount: replies.length, total, hasMore });
   return { replies, hasMore, total };
 };
 
