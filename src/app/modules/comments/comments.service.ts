@@ -77,8 +77,8 @@ const getCommentsByTargetFromDB = async (
 ) => {
   // console.log('type');
   const pageNumber = Number(page) || 1;
-  const limit = 2;
-  const skip = (pageNumber - 1) * 2;
+  const limit = 3;
+  const skip = (pageNumber - 1) * limit;
   const comments = await Comment.find({ targetType, targetId, parentId: null })
     .sort({
       createdAt: -1,
@@ -103,19 +103,26 @@ const getCommentsByTargetFromDB = async (
     },
   ]);
 
-  // console.log(commentIds, 'commentIds');
-  // console.log(replyCounts, 'replyCounts');
+  console.log(commentIds, 'commentIds');
+  console.log(replyCounts, 'replyCounts');
 
-  const transformedComments: any = [];
-  comments.forEach((c) => {
-    replyCounts.forEach((r) => {
-      if (c._id.equals(r._id)) {
-        transformedComments.push({ ...c.toObject(), count: r.count });
-      }
-    });
+  // const transformedComments: any = [];
+  // comments.map((c) => {
+  //   const repliesWithCounts=replyCounts.find((r) => c._id.equals(r._id))
+
+  //   return {
+
+  //     transformedComments.push({ ...c, replyCount: c.repliesWithCounts || 0})
+  //   }
+
+  // });
+
+  const transformedComments = comments.map((c) => {
+    const repliesWithCounts = replyCounts.find((r) => r._id.equals(c._id));
+    return { ...c.toObject(), replyCount: repliesWithCounts?.count ?? 0 };
   });
 
-  // console.log(transformedComments);
+  console.log(transformedComments);
 
   const total = await Comment.countDocuments({
     targetType,
@@ -131,7 +138,7 @@ const getCommentsByTargetFromDB = async (
 
 const getRepliesByParentIdFromDB = async (parentId: string, page: string) => {
   const pageNumber = Number(page);
-  const limit = 1;
+  const limit = 3;
   const skip = (pageNumber - 1) * limit;
 
   // console.log(parentId, 'here');
@@ -143,30 +150,94 @@ const getRepliesByParentIdFromDB = async (parentId: string, page: string) => {
 
   // const total = await Comment.countDocuments({ parentId, isDeleted: false });
 
+  // const [result] = await Comment.aggregate([
+  //   {
+  //     $match: {
+  //       parentId: new mongoose.Types.ObjectId(parentId),
+  //       isDeleted: false,
+  //     },
+  //   },
+  //   {
+  //     $facet: {
+  //       replies: [
+  //         { $sort: { createdAt: -1 } },
+  //         {
+  //           $skip: skip,
+  //         },
+  //         {
+  //           $limit: limit,
+  //         },
+  //       ],
+  //       totalCount: [{ $count: 'count' }],
+  //     },
+  //   },
+  // ]);
+
   const [result] = await Comment.aggregate([
     {
-      $match: { parentId: parentId, isDeleted: false },
+      $match: {
+        parentId: new mongoose.Types.ObjectId(parentId),
+        isDeleted: false,
+      },
     },
     {
       $facet: {
         replies: [
           { $sort: { createdAt: -1 } },
+          { $skip: skip },
+          { $limit: limit },
+
           {
-            $skip: skip,
+            $lookup: {
+              from: 'comments',
+              let: { replyId: '$_id' },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $eq: ['$parentId', '$$replyId'],
+                    },
+                    isDeleted: false,
+                  },
+                },
+                {
+                  $count: 'count',
+                },
+              ],
+              as: 'replyCounts',
+            },
           },
+
           {
-            $limit: limit,
+            $addFields: {
+              replyCount: {
+                $ifNull: [{ $first: '$replyCounts.count' }, 0],
+              },
+            },
+          },
+
+          {
+            $project: {
+              replyCounts: 0,
+            },
           },
         ],
-        totalCount: [{ $count: 'count' }],
+
+        totalCount: [
+          {
+            $count: 'count',
+          },
+        ],
       },
     },
   ]);
+  // console.log(result.replies);
   const replies = result.replies;
   const total = result.totalCount[0].count || 0;
   const hasMore = skip + limit < total;
 
-  console.log('✅ Final:', { repliesCount: replies.length, total, hasMore });
+  // console.log('✅ Final:', { repliesCount: replies.length, total, hasMore });
+
   return { replies, hasMore, total };
 };
 
