@@ -5,7 +5,7 @@ import AppError from '../../errors/AppError';
 import { CommentServices } from './comments.service';
 import { TTargetType } from './comments.interface';
 
-// ─── create ──────────────────────────────────────────────────────────────────
+//    create
 
 const createComment = catchAsync(async (req, res) => {
   const commenterId = req.user.id;
@@ -30,10 +30,7 @@ const createComment = catchAsync(async (req, res) => {
   });
 });
 
-// ─── get by target ────────────────────────────────────────────────────────────
-// GET /comments/:targetType/:targetId
-// e.g. /comments/Article/abc123
-//      /comments/LostFound/xyz789
+//    get by target
 
 const getCommentsByTarget = catchAsync(async (req, res) => {
   const { targetType, targetId, page } = req.params;
@@ -68,8 +65,7 @@ const getRepliesByParentId = catchAsync(async (req, res) => {
   });
 });
 
-// ─── update content ───────────────────────────────────────────────────────────
-
+//    update content
 const updateComment = catchAsync(async (req, res) => {
   const commentId = req.params.id;
   const updateData = req.body;
@@ -87,7 +83,7 @@ const updateComment = catchAsync(async (req, res) => {
   });
 });
 
-// ─── vote ─────────────────────────────────────────────────────────────────────
+//    vote
 
 const updateCommentVotes = catchAsync(async (req, res) => {
   const commentId = req.params.id;
@@ -108,7 +104,7 @@ const updateCommentVotes = catchAsync(async (req, res) => {
   });
 });
 
-// ─── soft delete ──────────────────────────────────────────────────────────────
+//    soft delete
 
 const deleteComment = catchAsync(async (req, res) => {
   const { id: commentId } = req.params;
@@ -127,16 +123,17 @@ const deleteComment = catchAsync(async (req, res) => {
   });
 });
 
-// ─── mark helpful lead ────────────────────────────────────────────────────────
-// only the post owner should call this — enforce on frontend for now
+//   mark helpful lead
 
 const markHelpfulLead = catchAsync(async (req, res) => {
   const { id: commentId } = req.params;
   const { isHelpfulLead } = req.body;
+  const requestingUserId = req.user.id;
 
   const result = await CommentServices.markHelpfulLeadIntoDB(
     commentId,
     isHelpfulLead,
+    requestingUserId,
   );
 
   sendResponse(res, {
@@ -147,8 +144,7 @@ const markHelpfulLead = catchAsync(async (req, res) => {
   });
 });
 
-// ─── admin: all comments ──────────────────────────────────────────────────────
-// GET /comments?targetType=LostFound&isSighting=true
+//    admin: all comments
 
 const getAllComments = catchAsync(async (req, res) => {
   const { targetType, isSighting, isHelpfulLead } = req.query;

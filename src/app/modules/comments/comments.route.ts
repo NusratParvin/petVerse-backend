@@ -7,7 +7,7 @@ import auth from '../../middlewares/auth';
 
 const router = express.Router();
 
-// ─── create ──────────────────────────────────────────────────────────────────
+//   create
 router.post(
   '/',
   auth(USER_ROLE.USER, USER_ROLE.ADMIN),
@@ -15,8 +15,7 @@ router.post(
   CommentControllers.createComment,
 );
 
-// ─── get by target ────────────────────────────────────────────────────────────
-// works for both: /comments/Article/:id  and  /comments/LostFound/:id
+//   get by target
 
 router.get(
   '/replies/:parentId/:page',
@@ -30,11 +29,10 @@ router.get(
   CommentControllers.getCommentsByTarget,
 );
 
-// ─── admin: get all (with optional filters) ───────────────────────────────────
-// GET /comments?targetType=LostFound&isSighting=true
+//    get all (with optional filters)
 router.get('/', auth(USER_ROLE.ADMIN), CommentControllers.getAllComments);
 
-// ─── update content ───────────────────────────────────────────────────────────
+//   update content
 router.patch(
   '/:id',
   auth(USER_ROLE.USER, USER_ROLE.ADMIN),
@@ -42,14 +40,14 @@ router.patch(
   CommentControllers.updateComment,
 );
 
-// ─── vote ─────────────────────────────────────────────────────────────────────
+//   vote
 router.patch(
   '/:id/vote',
   auth(USER_ROLE.USER, USER_ROLE.ADMIN),
   CommentControllers.updateCommentVotes,
 );
 
-// ─── mark helpful lead (post owner only) ─────────────────────────────────────
+//   mark helpful lead
 router.patch(
   '/:id/helpful-lead',
   auth(USER_ROLE.USER, USER_ROLE.ADMIN),
@@ -57,7 +55,7 @@ router.patch(
   CommentControllers.markHelpfulLead,
 );
 
-// ─── soft delete ──────────────────────────────────────────────────────────────
+//   soft delete
 router.delete(
   '/:id',
   auth(USER_ROLE.USER, USER_ROLE.ADMIN),

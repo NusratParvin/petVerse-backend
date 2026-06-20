@@ -6,8 +6,8 @@ import AppError from '../../errors/AppError';
 import httpStatus from 'http-status';
 import mongoose, { Types } from 'mongoose';
 import { TVoteType } from '../articles/articles.interface';
+import { NotificationService } from '../notification/notification.service';
 
-// push comment id into the parent document's comments array
 const pushCommentToParent = async (
   targetType: TTargetType,
   targetId: string,
@@ -29,7 +29,7 @@ const pushCommentToParent = async (
   }
 };
 
-// ─── create  ───────
+//   create
 
 const createCommentIntoDB = async (payload: TComment, userId: string) => {
   const commentData = {
@@ -44,6 +44,36 @@ const createCommentIntoDB = async (payload: TComment, userId: string) => {
   const session = await mongoose.startSession();
   try {
     session.startTransaction();
+
+    // find post owner
+    let postOwnerId: string | null = null;
+
+    if (payload.targetType === 'Article') {
+      const article = await Article.findById(payload.targetId).select(
+        'authorId',
+      );
+      postOwnerId = article?.authorId?.toString() || null;
+    } else if (payload.targetType === 'LostFound') {
+      const post = await LostFound.findById(payload.targetId).select(
+        'postedBy',
+      );
+      postOwnerId = post?.postedBy?.toString() || null;
+    }
+
+    if (postOwnerId) {
+      await NotificationService.createNotification({
+        recipientId: postOwnerId,
+        senderId: userId,
+        senderName: payload.commenter.name,
+        senderPhoto: payload.commenter.profilePhoto,
+        type: payload.isSighting ? 'sighting' : 'comment',
+        message: payload.isSighting
+          ? `${payload.commenter.name} reported a sighting on your post`
+          : `${payload.commenter.name} commented on your post`,
+        targetType: payload.targetType,
+        targetId: payload.targetId.toString(),
+      });
+    }
 
     const comment = await Comment.create([commentData], { session });
     if (!comment || comment.length === 0) {
@@ -67,9 +97,8 @@ const createCommentIntoDB = async (payload: TComment, userId: string) => {
   }
 };
 
-// ─── get by target  ─
+//   get by target
 
-// used by both article comment section and lost & found comment section
 const getCommentsByTargetFromDB = async (
   targetType: TTargetType,
   targetId: string,
@@ -236,12 +265,12 @@ const getRepliesByParentIdFromDB = async (parentId: string, page: string) => {
   const total = result.totalCount[0].count || 0;
   const hasMore = skip + limit < total;
 
-  // console.log('✅ Final:', { repliesCount: replies.length, total, hasMore });
+  // console.log(' Final:', { repliesCount: replies.length, total, hasMore });
 
   return { replies, hasMore, total };
 };
 
-// ─── update content
+//   update content
 
 const updateCommentIntoDB = async (
   commentId: string,
@@ -265,7 +294,7 @@ const updateCommentIntoDB = async (
   return updated;
 };
 
-// ─── vote  ──────────
+//   vote
 
 const updateCommentVotesIntoDB = async (
   commentId: string,
@@ -313,7 +342,7 @@ const updateCommentVotesIntoDB = async (
   return updated;
 };
 
-// ─── soft delete  ───
+//   soft delete
 
 const deleteCommentFromDB = async (commentId: string) => {
   const comment = await Comment.findById(commentId);
@@ -321,18 +350,19 @@ const deleteCommentFromDB = async (commentId: string) => {
     throw new AppError(httpStatus.NOT_FOUND, 'Comment not found');
   }
 
-  // soft delete — no transaction needed, no pulling from parent
+  // soft delete
   comment.isDeleted = true;
   await comment.save();
 
   return { message: 'Comment deleted' };
 };
 
-// ─── mark helpful lead (owner only) ─────────────────────────────────────────
+//   mark helpful lead (owner only)
 
 const markHelpfulLeadIntoDB = async (
   commentId: string,
   isHelpfulLead: boolean,
+  requestingUserId: string,
 ) => {
   const comment = await Comment.findById(commentId);
   if (!comment) {
@@ -342,10 +372,20 @@ const markHelpfulLeadIntoDB = async (
   comment.isHelpfulLead = isHelpfulLead;
   await comment.save();
 
+  await NotificationService.createNotification({
+    recipientId: comment.commenter.commenterId.toString(),
+    senderId: requestingUserId,
+    senderName: 'Post Owner',
+    type: 'helpful_lead',
+    message: 'Your sighting was marked as a helpful lead!',
+    targetType: 'Comment',
+    targetId: commentId,
+  });
+
   return comment;
 };
 
-// ─── admin: get all with filters ─────────────────────────────────────────────
+//   admin: get all with filters
 
 const getAllCommentsFromDB = async (query: {
   targetType?: TTargetType;

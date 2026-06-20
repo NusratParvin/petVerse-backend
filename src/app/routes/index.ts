@@ -14,6 +14,7 @@ import { ImportWizardRoutes } from '../modules/import-wizard/importWizard.route'
 import { InsuranceReviewRoutes } from '../modules/insuranceReview/insuranceReview.route';
 import { InsuranceRoutes } from '../modules/insurance/insurance.route';
 import { LostFoundRoutes } from '../modules/lostFound/lostFound.route';
+import { NotificationRoutes } from '../modules/notification/notification.route';
 
 const router = Router();
 
@@ -33,6 +34,7 @@ const moduleRoutes = [
   { path: '/insurance', route: InsuranceRoutes },
   { path: '/insurance-review', route: InsuranceReviewRoutes },
   { path: '/lost-found', route: LostFoundRoutes },
+  { path: '/notifications', route: NotificationRoutes },
 ];
 
 moduleRoutes.forEach((route) => router.use(route.path, route.route));
