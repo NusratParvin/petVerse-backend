@@ -137,6 +137,53 @@ const adminMarkResolved = catchAsync(async (req, res) => {
   });
 });
 
+const getPostForAdmin = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const result = await LostFoundService.getPostForAdminFromDB(id);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Post retrieved',
+    data: result,
+  });
+});
+
+const contactOwnerByEmail = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const { subject, message } = req.body;
+
+  const result = await LostFoundService.contactOwnerByEmailFromDB(
+    id,
+    subject,
+    message,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Email sent successfully',
+    data: result,
+  });
+});
+
+const contactOwnerByWhatsApp = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const { message } = req.body;
+
+  const result = await LostFoundService.contactOwnerByWhatsAppFromDB(
+    id,
+    message,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'WhatsApp sent successfully',
+    data: result,
+  });
+});
+
 export const LostFoundController = {
   getAllPosts,
   getPostById,
@@ -149,4 +196,8 @@ export const LostFoundController = {
   getLostFoundStats,
   adminDeletePost,
   adminMarkResolved,
+
+  getPostForAdmin,
+  contactOwnerByEmail,
+  contactOwnerByWhatsApp,
 };

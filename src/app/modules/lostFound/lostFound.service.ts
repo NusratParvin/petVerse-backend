@@ -4,10 +4,15 @@ import AppError from '../../errors/AppError';
 import httpStatus from 'http-status';
 import { extract } from '../../utils/extract';
 import {
+  emailTemplate,
+  emailText,
+  htmlWhatsAppText,
   lostFoundFilterableFields,
   lostFoundPaginationFields,
 } from './lostFound.constants';
 import pagination from '../../utils/pagination';
+import { sendWhatsAppText } from '../../utils/sendWhatsAppText';
+import { sendEmail } from '../../utils/sendEmail';
 
 type TFilters = {
   type?: TPostType;
@@ -231,6 +236,88 @@ const adminMarkResolvedInDB = async (postId: string) => {
   return post;
 };
 
+//   get single post with full owner details (admin)
+const getPostForAdminFromDB = async (postId: string) => {
+  const post = await LostFound.findById(postId)
+    .populate('postedBy', 'name email profilePhoto')
+    .lean();
+
+  if (!post) throw new AppError(httpStatus.NOT_FOUND, 'Post not found');
+  return post;
+};
+
+//   contact owner via email
+const contactOwnerByEmailFromDB = async (
+  postId: string,
+  subject: string,
+  message: string,
+) => {
+  const post = await LostFound.findById(postId)
+    .populate('postedBy', 'name email')
+    .lean();
+
+  if (!post) throw new AppError(httpStatus.NOT_FOUND, 'Post not found');
+
+  const owner = post.postedBy as any;
+  const petName = post.petName || `${post.species} (unnamed)`;
+
+  const html = emailTemplate({
+    petName,
+    ownerName: owner.name || 'Pet Owner',
+    message,
+  });
+
+  await sendEmail(owner.email, subject, html);
+
+  // log contact attempt on the post
+  await LostFound.findByIdAndUpdate(postId, {
+    $push: {
+      contactLog: {
+        method: 'email',
+        timestamp: new Date(),
+        note: subject,
+      },
+    },
+  });
+
+  return { success: true, sentTo: owner.email };
+};
+
+//   contact owner via whatsapp
+const contactOwnerByWhatsAppFromDB = async (
+  postId: string,
+  message: string,
+) => {
+  const post = await LostFound.findById(postId)
+    .populate('postedBy', 'name')
+    .lean();
+
+  if (!post) throw new AppError(httpStatus.NOT_FOUND, 'Post not found');
+
+  const phone = post.posterPhone;
+  if (!phone)
+    throw new AppError(httpStatus.BAD_REQUEST, 'No phone number on this post');
+
+  const petName = post.petName || `${post.species} (unnamed)`;
+
+  const whatsappMessage = `🐾 *PetVerse Lost & Found*\n\nHi! This is the PetVerse admin team regarding your post for *${petName}*.\n\n${message}\n\n_PetVerse UAE_`;
+
+  await sendWhatsAppText(phone, whatsappMessage);
+
+  // log contact attempt
+  await LostFound.findByIdAndUpdate(postId, {
+    $push: {
+      contactLog: {
+        method: 'whatsapp',
+        timestamp: new Date(),
+        note: message.substring(0, 100),
+      },
+    },
+  });
+
+  return { success: true, sentTo: phone };
+};
+
 export const LostFoundService = {
   getAllPosts,
   getPostById,
@@ -243,4 +330,8 @@ export const LostFoundService = {
   getLostFoundStatsFromDB,
   adminDeletePostFromDB,
   adminMarkResolvedInDB,
+
+  getPostForAdminFromDB,
+  contactOwnerByEmailFromDB,
+  contactOwnerByWhatsAppFromDB,
 };

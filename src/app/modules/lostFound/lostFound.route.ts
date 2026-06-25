@@ -62,4 +62,22 @@ router.patch(
   LostFoundController.adminMarkResolved,
 );
 
+router.get(
+  '/admin/:id',
+  auth(USER_ROLE.ADMIN),
+  LostFoundController.getPostForAdmin,
+);
+
+router.post(
+  '/admin/:id/contact-email',
+  auth(USER_ROLE.ADMIN),
+  LostFoundController.contactOwnerByEmail,
+);
+
+router.post(
+  '/admin/:id/contact-whatsapp',
+  auth(USER_ROLE.ADMIN),
+  LostFoundController.contactOwnerByWhatsApp,
+);
+
 export const LostFoundRoutes = router;

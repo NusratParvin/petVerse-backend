@@ -11,6 +11,7 @@ type TResponse<T> = {
     page: number;
     limit: number;
     pages: number;
+    totalPages?: number;
     hasNext?: boolean;
     hasPrev?: boolean;
   };
