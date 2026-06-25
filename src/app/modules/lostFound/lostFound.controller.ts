@@ -90,6 +90,53 @@ const deletePost = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getAllPostsForAdmin = catchAsync(async (req, res) => {
+  const result = await LostFoundService.getAllPostsForAdminFromDB(req.query);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Posts retrieved successfully',
+    data: result.data,
+    meta: result.meta,
+  });
+});
+
+const getLostFoundStats = catchAsync(async (req, res) => {
+  const result = await LostFoundService.getLostFoundStatsFromDB();
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Stats retrieved',
+    data: result,
+  });
+});
+
+const adminDeletePost = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const result = await LostFoundService.adminDeletePostFromDB(id);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Post deleted',
+    data: result,
+  });
+});
+
+const adminMarkResolved = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const result = await LostFoundService.adminMarkResolvedInDB(id);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Post marked as resolved',
+    data: result,
+  });
+});
+
 export const LostFoundController = {
   getAllPosts,
   getPostById,
@@ -97,4 +144,9 @@ export const LostFoundController = {
   updatePost,
   markResolved,
   deletePost,
+
+  getAllPostsForAdmin,
+  getLostFoundStats,
+  adminDeletePost,
+  adminMarkResolved,
 };

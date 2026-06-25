@@ -36,4 +36,30 @@ router.delete(
   LostFoundController.deletePost,
 );
 
+//admin routes
+
+router.get(
+  '/admin/all',
+  auth(USER_ROLE.ADMIN),
+  LostFoundController.getAllPostsForAdmin,
+);
+
+router.get(
+  '/admin/stats',
+  auth(USER_ROLE.ADMIN),
+  LostFoundController.getLostFoundStats,
+);
+
+router.delete(
+  '/admin/:id',
+  auth(USER_ROLE.ADMIN),
+  LostFoundController.adminDeletePost,
+);
+
+router.patch(
+  '/admin/:id/resolve',
+  auth(USER_ROLE.ADMIN),
+  LostFoundController.adminMarkResolved,
+);
+
 export const LostFoundRoutes = router;

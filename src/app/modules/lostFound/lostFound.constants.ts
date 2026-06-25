@@ -18,3 +18,17 @@ export const UAE_EMIRATES = [
   'Umm Al Quwain',
 ] as const;
 export const POST_STATUSES = ['active', 'resolved'] as const;
+
+export const lostFoundFilterableFields = [
+  'type',
+  'status',
+  'emirate',
+  'species',
+  'search',
+];
+export const lostFoundPaginationFields = [
+  'page',
+  'limit',
+  'sortBy',
+  'sortOrder',
+];
