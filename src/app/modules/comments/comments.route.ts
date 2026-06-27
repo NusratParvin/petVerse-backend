@@ -15,6 +15,8 @@ router.post(
   CommentControllers.createComment,
 );
 
+router.get('/stats', auth(USER_ROLE.ADMIN), CommentControllers.getCommentStats);
+
 //   get by target
 
 router.get(
@@ -53,6 +55,13 @@ router.patch(
   auth(USER_ROLE.USER, USER_ROLE.ADMIN),
   zodValidationRequest(CommentValidation.markHelpfulLeadValidationSchema),
   CommentControllers.markHelpfulLead,
+);
+
+//restore comment
+router.patch(
+  '/:id/restore',
+  auth(USER_ROLE.ADMIN),
+  CommentControllers.restoreComment,
 );
 
 //   soft delete

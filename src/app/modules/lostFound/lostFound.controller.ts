@@ -152,7 +152,7 @@ const getPostForAdmin = catchAsync(async (req, res) => {
 const contactOwnerByEmail = catchAsync(async (req, res) => {
   const { id } = req.params;
   const { subject, message } = req.body;
-
+  console.log(id, subject, message);
   const result = await LostFoundService.contactOwnerByEmailFromDB(
     id,
     subject,

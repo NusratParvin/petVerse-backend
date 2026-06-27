@@ -63,10 +63,21 @@ const deleteVet = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getVetStats = catchAsync(async (req: Request, res: Response) => {
+  const stats = await VetService.getVetStats();
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Vet stats retrieved successfully',
+    data: stats,
+  });
+});
+
 export const VetController = {
   createVet,
   getAllVets,
   getSingleVet,
   updateVet,
   deleteVet,
+  getVetStats,
 };

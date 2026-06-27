@@ -8,7 +8,9 @@ import { USER_ROLE } from '../user/user.constants';
 const router = express.Router();
 
 // Public routes
+router.get('/stats', auth(USER_ROLE.ADMIN), VetController.getVetStats);
 router.get('/', VetController.getAllVets);
+
 router.get('/:id', VetController.getSingleVet);
 
 // Admin only routes

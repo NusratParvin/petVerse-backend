@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { LostFound } from './lostFound.model';
 import { TLostFound, TUAEEmirate, TPostType } from './lostFound.interface';
 import AppError from '../../errors/AppError';
@@ -5,8 +6,6 @@ import httpStatus from 'http-status';
 import { extract } from '../../utils/extract';
 import {
   emailTemplate,
-  emailText,
-  htmlWhatsAppText,
   lostFoundFilterableFields,
   lostFoundPaginationFields,
 } from './lostFound.constants';
@@ -20,6 +19,20 @@ type TFilters = {
   species?: string;
   status?: string;
   search?: string;
+};
+
+const formatPhone = (phone: string): string => {
+  // remove all non-digits
+  const digits = phone.replace(/\D/g, '');
+
+  // already has country code (UAE numbers are 12 digits with 971)
+  if (digits.startsWith('971')) return `+${digits}`;
+
+  // local UAE number starting with 0 → replace with +971
+  if (digits.startsWith('0')) return `+971${digits.slice(1)}`;
+
+  // no country code, assume UAE
+  return `+971${digits}`;
 };
 
 const getAllPosts = async (filters: TFilters) => {
@@ -211,6 +224,15 @@ const getLostFoundStatsFromDB = async () => {
     resolutionRate,
     speciesBreakdown,
     emirateBreakdown,
+    //dashboard
+    byEmirate: emirateBreakdown.map((e) => ({
+      emirate: e._id,
+      count: e.count,
+    })),
+    bySpecies: speciesBreakdown.map((s) => ({
+      species: s._id,
+      count: s.count,
+    })),
   };
 };
 
@@ -252,9 +274,12 @@ const contactOwnerByEmailFromDB = async (
   subject: string,
   message: string,
 ) => {
+  // console.log(postId, subject, message);
   const post = await LostFound.findById(postId)
-    .populate('postedBy', 'name email')
+    .select('posterName posterEmail petName species')
     .lean();
+
+  // console.log(post);
 
   if (!post) throw new AppError(httpStatus.NOT_FOUND, 'Post not found');
 
@@ -269,7 +294,8 @@ const contactOwnerByEmailFromDB = async (
 
   await sendEmail(owner.email, subject, html);
 
-  // log contact attempt on the post
+  // console.log(email, 'email here');
+
   await LostFound.findByIdAndUpdate(postId, {
     $push: {
       contactLog: {
@@ -279,7 +305,7 @@ const contactOwnerByEmailFromDB = async (
       },
     },
   });
-
+  // console.log(res);
   return { success: true, sentTo: owner.email };
 };
 
@@ -289,7 +315,7 @@ const contactOwnerByWhatsAppFromDB = async (
   message: string,
 ) => {
   const post = await LostFound.findById(postId)
-    .populate('postedBy', 'name')
+    .select('posterPhone petName species')
     .lean();
 
   if (!post) throw new AppError(httpStatus.NOT_FOUND, 'Post not found');
@@ -301,8 +327,8 @@ const contactOwnerByWhatsAppFromDB = async (
   const petName = post.petName || `${post.species} (unnamed)`;
 
   const whatsappMessage = `🐾 *PetVerse Lost & Found*\n\nHi! This is the PetVerse admin team regarding your post for *${petName}*.\n\n${message}\n\n_PetVerse UAE_`;
-
-  await sendWhatsAppText(phone, whatsappMessage);
+  // console.log(phone);
+  await sendWhatsAppText(formatPhone(phone), whatsappMessage);
 
   // log contact attempt
   await LostFound.findByIdAndUpdate(postId, {

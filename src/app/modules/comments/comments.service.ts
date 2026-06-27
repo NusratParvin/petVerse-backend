@@ -387,24 +387,121 @@ const markHelpfulLeadIntoDB = async (
 
 //   admin: get all with filters
 
+// const getAllCommentsFromDB = async (query: {
+//   targetType?: TTargetType;
+//   isSighting?: boolean;
+//   isHelpfulLead?: boolean;
+// }) => {
+//   const filter: Record<string, unknown> = {};
+
+//   if (query.targetType) filter.targetType = query.targetType;
+//   if (query.isSighting !== undefined) filter.isSighting = query.isSighting;
+//   if (query.isHelpfulLead !== undefined)
+//     filter.isHelpfulLead = query.isHelpfulLead;
+
+//   // admin needs to see deleted comments too — bypass the pre hook
+//   const comments = await Comment.find(filter)
+//     .setOptions({ bypassPreHooks: true })
+//     .sort({ createdAt: -1 });
+
+//   return comments;
+// };
+
 const getAllCommentsFromDB = async (query: {
   targetType?: TTargetType;
   isSighting?: boolean;
   isHelpfulLead?: boolean;
+  isDeleted?: boolean;
+  page?: number;
+  limit?: number;
 }) => {
   const filter: Record<string, unknown> = {};
-
   if (query.targetType) filter.targetType = query.targetType;
   if (query.isSighting !== undefined) filter.isSighting = query.isSighting;
   if (query.isHelpfulLead !== undefined)
     filter.isHelpfulLead = query.isHelpfulLead;
+  if (query.isDeleted !== undefined) filter.isDeleted = query.isDeleted;
 
-  // admin needs to see deleted comments too — bypass the pre hook
+  const page = query.page || 1;
+  const limit = query.limit || 10;
+  const skip = (page - 1) * limit;
+
   const comments = await Comment.find(filter)
     .setOptions({ bypassPreHooks: true })
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    .lean();
 
-  return comments;
+  const total = await Comment.countDocuments(filter).setOptions({
+    bypassPreHooks: true,
+  });
+
+  return {
+    comments,
+    meta: {
+      total,
+      page,
+      limit,
+      pages: Math.ceil(total / limit),
+    },
+  };
+};
+
+const restoreCommentIntoDB = async (commentId: string) => {
+  const comment = await Comment.findById(commentId).setOptions({
+    bypassPreHooks: true,
+  });
+  if (!comment) throw new AppError(httpStatus.NOT_FOUND, 'Comment not found');
+  comment.isDeleted = false;
+  await comment.save();
+  return comment;
+};
+
+const getCommentStats = async () => {
+  const [totals] = await Comment.aggregate([
+    { $match: {} }, // bypass pre-hook — admin needs deleted too
+    {
+      $group: {
+        _id: null,
+        total: { $sum: 1 },
+        articleComments: {
+          $sum: { $cond: [{ $eq: ['$targetType', 'Article'] }, 1, 0] },
+        },
+        lostFoundComments: {
+          $sum: { $cond: [{ $eq: ['$targetType', 'LostFound'] }, 1, 0] },
+        },
+        sightings: {
+          $sum: { $cond: ['$isSighting', 1, 0] },
+        },
+        helpfulLeads: {
+          $sum: { $cond: ['$isHelpfulLead', 1, 0] },
+        },
+        deleted: {
+          $sum: { $cond: ['$isDeleted', 1, 0] },
+        },
+      },
+    },
+  ]).option({ bypassDocumentValidation: true });
+
+  const recentActivity = await Comment.find()
+    .setOptions({ bypassPreHooks: true })
+    .sort({ createdAt: -1 })
+    .limit(5)
+    .select(
+      'content commenter targetType isSighting isHelpfulLead isDeleted createdAt',
+    )
+    .lean();
+
+  return {
+    total: totals?.total || 0,
+    articleComments: totals?.articleComments || 0,
+    lostFoundComments: totals?.lostFoundComments || 0,
+    sightings: totals?.sightings || 0,
+    helpfulLeads: totals?.helpfulLeads || 0,
+    deleted: totals?.deleted || 0,
+    recentActivity,
+  };
 };
 
 export const CommentServices = {
@@ -416,4 +513,8 @@ export const CommentServices = {
   deleteCommentFromDB,
   markHelpfulLeadIntoDB,
   getAllCommentsFromDB,
+
+  getCommentStats,
+  getAllCommentsFromDB,
+  restoreCommentIntoDB,
 };

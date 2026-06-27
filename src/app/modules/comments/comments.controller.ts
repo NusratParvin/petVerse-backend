@@ -146,20 +146,64 @@ const markHelpfulLead = catchAsync(async (req, res) => {
 
 //    admin: all comments
 
+// const getAllComments = catchAsync(async (req, res) => {
+//   const { targetType, isSighting, isHelpfulLead } = req.query;
+
+//   const result = await CommentServices.getAllCommentsFromDB({
+//     targetType: targetType as TTargetType | undefined,
+//     isSighting: isSighting !== undefined ? isSighting === 'true' : undefined,
+//     isHelpfulLead:
+//       isHelpfulLead !== undefined ? isHelpfulLead === 'true' : undefined,
+//   });
+
+//   sendResponse(res, {
+//     statusCode: httpStatus.OK,
+//     success: true,
+//     message: 'All comments retrieved successfully',
+//     data: result,
+//   });
+// });
+
 const getAllComments = catchAsync(async (req, res) => {
-  const { targetType, isSighting, isHelpfulLead } = req.query;
+  const { targetType, isSighting, isHelpfulLead, isDeleted, page, limit } =
+    req.query;
 
   const result = await CommentServices.getAllCommentsFromDB({
     targetType: targetType as TTargetType | undefined,
     isSighting: isSighting !== undefined ? isSighting === 'true' : undefined,
     isHelpfulLead:
       isHelpfulLead !== undefined ? isHelpfulLead === 'true' : undefined,
+    isDeleted: isDeleted !== undefined ? isDeleted === 'true' : undefined,
+    page: page ? Number(page) : 1,
+    limit: limit ? Number(limit) : 10,
   });
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: 'All comments retrieved successfully',
+    data: result.comments,
+    meta: result.meta,
+  });
+});
+
+const restoreComment = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const result = await CommentServices.restoreCommentIntoDB(id);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Comment restored successfully',
+    data: result,
+  });
+});
+
+const getCommentStats = catchAsync(async (req, res) => {
+  const result = await CommentServices.getCommentStats();
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Comment stats retrieved successfully',
     data: result,
   });
 });
@@ -173,4 +217,8 @@ export const CommentControllers = {
   deleteComment,
   markHelpfulLead,
   getAllComments,
+
+  getCommentStats,
+
+  restoreComment,
 };
