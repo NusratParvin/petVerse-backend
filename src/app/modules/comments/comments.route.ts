@@ -31,7 +31,7 @@ router.get(
   CommentControllers.getCommentsByTarget,
 );
 
-//    get all (with optional filters)
+//    get all
 router.get('/', auth(USER_ROLE.ADMIN), CommentControllers.getAllComments);
 
 //   update content

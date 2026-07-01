@@ -135,9 +135,21 @@ commentSchema.index({ targetId: 1, targetType: 1 });
 
 // filter out deleted comments by default
 commentSchema.pre('find', function () {
+  const options = this.getOptions();
+
+  if (options?.bypassPreHooks) {
+    return;
+  }
+
   this.where({ isDeleted: false });
 });
+
 commentSchema.pre('findOne', function () {
+  const options = this.getOptions();
+
+  if (options?.bypassPreHooks) {
+    return;
+  }
   this.where({ isDeleted: false });
 });
 

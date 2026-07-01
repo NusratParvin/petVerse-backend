@@ -108,6 +108,7 @@ const updateCommentVotes = catchAsync(async (req, res) => {
 
 const deleteComment = catchAsync(async (req, res) => {
   const { id: commentId } = req.params;
+  // console.log(req.params);
 
   const result = await CommentServices.deleteCommentFromDB(commentId);
 
@@ -129,7 +130,7 @@ const markHelpfulLead = catchAsync(async (req, res) => {
   const { id: commentId } = req.params;
   const { isHelpfulLead } = req.body;
   const requestingUserId = req.user.id;
-
+  // console.log(req.params);
   const result = await CommentServices.markHelpfulLeadIntoDB(
     commentId,
     isHelpfulLead,
@@ -146,43 +147,14 @@ const markHelpfulLead = catchAsync(async (req, res) => {
 
 //    admin: all comments
 
-// const getAllComments = catchAsync(async (req, res) => {
-//   const { targetType, isSighting, isHelpfulLead } = req.query;
-
-//   const result = await CommentServices.getAllCommentsFromDB({
-//     targetType: targetType as TTargetType | undefined,
-//     isSighting: isSighting !== undefined ? isSighting === 'true' : undefined,
-//     isHelpfulLead:
-//       isHelpfulLead !== undefined ? isHelpfulLead === 'true' : undefined,
-//   });
-
-//   sendResponse(res, {
-//     statusCode: httpStatus.OK,
-//     success: true,
-//     message: 'All comments retrieved successfully',
-//     data: result,
-//   });
-// });
-
 const getAllComments = catchAsync(async (req, res) => {
-  const { targetType, isSighting, isHelpfulLead, isDeleted, page, limit } =
-    req.query;
-
-  const result = await CommentServices.getAllCommentsFromDB({
-    targetType: targetType as TTargetType | undefined,
-    isSighting: isSighting !== undefined ? isSighting === 'true' : undefined,
-    isHelpfulLead:
-      isHelpfulLead !== undefined ? isHelpfulLead === 'true' : undefined,
-    isDeleted: isDeleted !== undefined ? isDeleted === 'true' : undefined,
-    page: page ? Number(page) : 1,
-    limit: limit ? Number(limit) : 10,
-  });
+  const result = await CommentServices.getAllCommentsFromDB(req.query);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: 'All comments retrieved successfully',
-    data: result.comments,
+    data: result.data,
     meta: result.meta,
   });
 });

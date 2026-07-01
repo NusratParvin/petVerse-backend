@@ -25,7 +25,7 @@ const formatPhone = (phone: string): string => {
   // remove all non-digits
   const digits = phone.replace(/\D/g, '');
 
-  // already has country code (UAE numbers are 12 digits with 971)
+  //  (UAE numbers are 12 digits with 971)
   if (digits.startsWith('971')) return `+${digits}`;
 
   // local UAE number starting with 0 → replace with +971
@@ -36,7 +36,7 @@ const formatPhone = (phone: string): string => {
 };
 
 const getAllPosts = async (filters: TFilters) => {
-  console.log(filters);
+  // console.log(filters);
   const query: Record<string, unknown> = {};
 
   if (filters.type) query.type = filters.type;

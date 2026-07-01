@@ -7,6 +7,12 @@ import httpStatus from 'http-status';
 import mongoose, { Types } from 'mongoose';
 import { TVoteType } from '../articles/articles.interface';
 import { NotificationService } from '../notification/notification.service';
+import { extract } from '../../utils/extract';
+import {
+  commentsFilterableFields,
+  commentsPaginationFields,
+} from './comments.constants';
+import pagination from '../../utils/pagination';
 
 const pushCommentToParent = async (
   targetType: TTargetType,
@@ -132,8 +138,8 @@ const getCommentsByTargetFromDB = async (
     },
   ]);
 
-  console.log(commentIds, 'commentIds');
-  console.log(replyCounts, 'replyCounts');
+  // console.log(commentIds, 'commentIds');
+  // console.log(replyCounts, 'replyCounts');
 
   // const transformedComments: any = [];
   // comments.map((c) => {
@@ -151,7 +157,7 @@ const getCommentsByTargetFromDB = async (
     return { ...c.toObject(), replyCount: repliesWithCounts?.count ?? 0 };
   });
 
-  console.log(transformedComments);
+  // console.log(transformedComments);
 
   const total = await Comment.countDocuments({
     targetType,
@@ -276,7 +282,7 @@ const updateCommentIntoDB = async (
   commentId: string,
   updateData: Partial<TComment>,
 ) => {
-  console.log(updateData, 'update');
+  // console.log(updateData, 'update');
   const comment = await Comment.findById(commentId);
   if (!comment) {
     throw new AppError(httpStatus.NOT_FOUND, 'Comment not found');
@@ -364,14 +370,15 @@ const markHelpfulLeadIntoDB = async (
   isHelpfulLead: boolean,
   requestingUserId: string,
 ) => {
+  // console.log(isHelpfulLead, commentId, requestingUserId);
   const comment = await Comment.findById(commentId);
   if (!comment) {
     throw new AppError(httpStatus.NOT_FOUND, 'Comment not found');
   }
-
+  // console.log(comment);
   comment.isHelpfulLead = isHelpfulLead;
   await comment.save();
-
+  // console.log('object');
   await NotificationService.createNotification({
     recipientId: comment.commenter.commenterId.toString(),
     senderId: requestingUserId,
@@ -381,54 +388,38 @@ const markHelpfulLeadIntoDB = async (
     targetType: 'Comment',
     targetId: commentId,
   });
-
+  // console.log(comment);
   return comment;
 };
 
 //   admin: get all with filters
 
-// const getAllCommentsFromDB = async (query: {
-//   targetType?: TTargetType;
-//   isSighting?: boolean;
-//   isHelpfulLead?: boolean;
-// }) => {
-//   const filter: Record<string, unknown> = {};
+const getAllCommentsFromDB = async (query: Record<string, unknown>) => {
+  // console.log(query);
+  const filters = extract(query, commentsFilterableFields);
+  const paginationOptions = extract(query, commentsPaginationFields);
+  const { page, limit, skip, sortBy, sortOrder } =
+    pagination(paginationOptions);
 
-//   if (query.targetType) filter.targetType = query.targetType;
-//   if (query.isSighting !== undefined) filter.isSighting = query.isSighting;
-//   if (query.isHelpfulLead !== undefined)
-//     filter.isHelpfulLead = query.isHelpfulLead;
-
-//   // admin needs to see deleted comments too — bypass the pre hook
-//   const comments = await Comment.find(filter)
-//     .setOptions({ bypassPreHooks: true })
-//     .sort({ createdAt: -1 });
-
-//   return comments;
-// };
-
-const getAllCommentsFromDB = async (query: {
-  targetType?: TTargetType;
-  isSighting?: boolean;
-  isHelpfulLead?: boolean;
-  isDeleted?: boolean;
-  page?: number;
-  limit?: number;
-}) => {
   const filter: Record<string, unknown> = {};
-  if (query.targetType) filter.targetType = query.targetType;
-  if (query.isSighting !== undefined) filter.isSighting = query.isSighting;
-  if (query.isHelpfulLead !== undefined)
-    filter.isHelpfulLead = query.isHelpfulLead;
-  if (query.isDeleted !== undefined) filter.isDeleted = query.isDeleted;
-
-  const page = query.page || 1;
-  const limit = query.limit || 10;
-  const skip = (page - 1) * limit;
+  if (filters.targetType) filter.targetType = filters.targetType;
+  if (filters.isSighting) filter.isSighting = filters.isSighting;
+  if (filters.isHelpfulLead) filter.isHelpfulLead = filters.isHelpfulLead;
+  if (filters.isDeleted) filter.isDeleted = filters.isDeleted;
+  if (filters.search) {
+    filter.$or = [
+      {
+        content: {
+          $regex: filters.search,
+          $options: 'i',
+        },
+      },
+    ];
+  }
 
   const comments = await Comment.find(filter)
     .setOptions({ bypassPreHooks: true })
-    .sort({ createdAt: -1 })
+    .sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 })
     .skip(skip)
     .limit(limit)
     .lean();
@@ -437,21 +428,26 @@ const getAllCommentsFromDB = async (query: {
     bypassPreHooks: true,
   });
 
-  return {
-    comments,
+  const result = {
+    data: comments,
     meta: {
       total,
       page,
       limit,
       pages: Math.ceil(total / limit),
+      hasMore: skip + limit < total,
     },
   };
+
+  return result;
 };
 
 const restoreCommentIntoDB = async (commentId: string) => {
+  console.log(commentId);
   const comment = await Comment.findById(commentId).setOptions({
     bypassPreHooks: true,
   });
+  console.log(comment);
   if (!comment) throw new AppError(httpStatus.NOT_FOUND, 'Comment not found');
   comment.isDeleted = false;
   await comment.save();
@@ -460,7 +456,8 @@ const restoreCommentIntoDB = async (commentId: string) => {
 
 const getCommentStats = async () => {
   const [totals] = await Comment.aggregate([
-    { $match: {} }, // bypass pre-hook — admin needs deleted too
+    //theres a pre-hook i want to bypass
+    { $match: {} },
     {
       $group: {
         _id: null,
@@ -512,7 +509,7 @@ export const CommentServices = {
   updateCommentVotesIntoDB,
   deleteCommentFromDB,
   markHelpfulLeadIntoDB,
-  getAllCommentsFromDB,
+  // getAllCommentsFromDB,
 
   getCommentStats,
   getAllCommentsFromDB,
