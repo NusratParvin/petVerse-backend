@@ -10,7 +10,7 @@ const postSchema = new Schema<TPost>(
     },
     petId: {
       type: Schema.Types.ObjectId,
-      ref: 'pet',
+      ref: 'Pet',
       required: false,
     },
     type: {
@@ -48,6 +48,19 @@ const postSchema = new Schema<TPost>(
       type: String,
       enum: ['Article', 'Post'],
       required: false,
+    },
+
+    isMilestone: {
+      type: Boolean,
+      default: false,
+    },
+    milestoneCategory: {
+      type: String,
+      enum: ['birthday', 'adoption', 'vet-visit', 'health', 'other'],
+      default: null,
+      required: function () {
+        return this.isMilestone === true;
+      },
     },
 
     reactionSummary: {

@@ -13,9 +13,9 @@ const createPostIntoDB = async (payload: Partial<TPost>, userId: string) => {
   if (payload.media && payload.media.length > 0) {
     type = payload.media[0].type === 'video' ? 'video' : 'photo';
   }
-
+  // console.log(payload);
   const postData = { ...payload, authorId: userId, type };
-
+  // console.log('------>postData', postData);
   const post = await Post.create(postData);
   return post;
 };
@@ -90,16 +90,16 @@ const createShareIntoDB = async (
 // refId is populated dynamically via refPath, so a shared_article post
 // comes back with the full Article embedded, no extra query needed on
 // the frontend.
-const getFeedFromDB = async (page = 1, limit = 15) => {
+const getFeedFromDB = async (page = 1, limit = 2) => {
   const skip = (page - 1) * limit;
 
-  const posts = await Post.find({ isDeleted: false });
-  // .populate({ path: 'authorId', select: 'name profilePhoto' })
-  // .populate({ path: 'petId', select: 'name species profilePhoto' })
-  // .populate({ path: 'refId' }) // resolves to Article or Post per refType
-  // .sort({ createdAt: -1 })
-  // .skip(skip)
-  // .limit(limit);
+  const posts = await Post.find({ isDeleted: false })
+    .populate({ path: 'authorId', select: 'name profilePhoto' })
+    .populate({ path: 'petId', select: 'name species profilePhoto' })
+    .populate({ path: 'refId' }) // resolves to Article or Post per refType
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
 
   console.log(posts, 'posts---->');
   return posts;

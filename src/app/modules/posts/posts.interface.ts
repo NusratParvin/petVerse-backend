@@ -9,6 +9,13 @@ export type TPostType =
   | 'text'
   | 'shared_post';
 
+export type TMilestoneCategory =
+  | 'birthday'
+  | 'adoption'
+  | 'vet-visit'
+  | 'health'
+  | 'other';
+
 // The two content types a Post can point back to when it's a share.
 // Kept explicit (not just 'string') so TS catches typos at compile time.
 export type TShareRefType = 'Article' | 'Post';
@@ -30,7 +37,8 @@ export type TPost = {
   // the Article collection or the Post collection.
   refId?: Types.ObjectId;
   refType?: TShareRefType;
-
+  isMilestone: boolean;
+  milestoneCategory?: TMilestoneCategory | null;
   reactionSummary: TReactionSummary;
   commentCount: number;
   shareCount: number;
