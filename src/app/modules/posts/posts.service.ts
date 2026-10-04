@@ -20,12 +20,82 @@ const createPostIntoDB = async (payload: Partial<TPost>, userId: string) => {
   return post;
 };
 
+const sharedContentPopulate = {
+  path: 'refId',
+  match: { isDeleted: { $ne: true } },
+  populate: [
+    {
+      path: 'authorId',
+      select: 'name profilePhoto',
+      strictPopulate: false,
+    },
+    {
+      path: 'petId',
+      select: 'name species profilePhoto',
+      strictPopulate: false,
+    },
+  ],
+};
+
 // Sharing an Article or another Post into the feed.
-// This is a transaction because two documents change together:
-// 1. a new Post is created (the share itself)
-// 2. the original content's shareCount goes up
-// If either step fails, both should roll back — same reasoning as your
-// reactToArticleIntoDB transaction.
+
+// const createShareIntoDB = async (
+//   refId: string,
+//   refType: TShareRefType,
+//   userId: string,
+//   caption?: string,
+// ) => {
+//   const session = await mongoose.startSession();
+//   try {
+//     session.startTransaction();
+
+//     let original;
+//     if (refType === 'Article') {
+//       original = await Article.findById(refId).session(session);
+//     } else {
+//       original = await Post.findById(refId).session(session);
+//     }
+
+//     if (!original) {
+//       throw new AppError(httpStatus.NOT_FOUND, `${refType} not found`);
+//     }
+
+//     const sharePost = await Post.create(
+//       [
+//         {
+//           authorId: userId,
+//           type: refType === 'Article' ? 'shared_article' : 'shared_post',
+//           refId,
+//           refType,
+//           caption,
+//         },
+//       ],
+//       { session },
+//     );
+
+//     if (refType === 'Article') {
+//       await Article.findByIdAndUpdate(
+//         refId,
+//         { $inc: { shareCount: 1 } },
+//         { session },
+//       );
+//     } else {
+//       await Post.findByIdAndUpdate(
+//         refId,
+//         { $inc: { shareCount: 1 } },
+//         { session },
+//       );
+//     }
+
+//     await session.commitTransaction();
+//     return sharePost[0];
+//   } catch (error) {
+//     await session.abortTransaction();
+//     throw error;
+//   } finally {
+//     session.endSession();
+//   }
+// };
 const createShareIntoDB = async (
   refId: string,
   refType: TShareRefType,
@@ -36,48 +106,63 @@ const createShareIntoDB = async (
   try {
     session.startTransaction();
 
-    // Instead of one variable that could be either model, just handle
-    // each case separately — simpler for TypeScript AND easier to read.
-    let original;
+    // by default, point at what the user clicked
+    let rootId: string = refId;
+    let rootType: TShareRefType = refType;
+
     if (refType === 'Article') {
-      original = await Article.findById(refId).session(session);
+      // articles are never shares, so no refId to check
+      const article = await Article.findOne({
+        _id: refId,
+        isDeleted: { $ne: true },
+      }).session(session);
+      if (!article)
+        throw new AppError(httpStatus.NOT_FOUND, 'Article not found');
     } else {
-      original = await Post.findById(refId).session(session);
+      const post = await Post.findOne({
+        _id: refId,
+        isDeleted: { $ne: true },
+      }).session(session);
+      if (!post) throw new AppError(httpStatus.NOT_FOUND, 'Post not found');
+
+      // if the clicked post is itself a share, point at ITS original instead
+      if (post.refId && post.refType) {
+        rootId = post.refId.toString();
+        rootType = post.refType;
+      }
     }
 
-    if (!original) {
-      throw new AppError(httpStatus.NOT_FOUND, `${refType} not found`);
-    }
-
-    const sharePost = await Post.create(
+    // create the share
+    const [sharePost] = await Post.create(
       [
         {
           authorId: userId,
-          type: refType === 'Article' ? 'shared_article' : 'shared_post',
-          refId,
-          refType,
+          type: rootType === 'Article' ? 'shared_article' : 'shared_post',
+          refId: rootId,
+          refType: rootType,
           caption,
         },
       ],
       { session },
     );
 
-    if (refType === 'Article') {
+    // bump the root's share count
+    if (rootType === 'Article') {
       await Article.findByIdAndUpdate(
-        refId,
+        rootId,
         { $inc: { shareCount: 1 } },
         { session },
       );
     } else {
       await Post.findByIdAndUpdate(
-        refId,
+        rootId,
         { $inc: { shareCount: 1 } },
         { session },
       );
     }
 
     await session.commitTransaction();
-    return sharePost[0];
+    return sharePost;
   } catch (error) {
     await session.abortTransaction();
     throw error;
@@ -96,7 +181,8 @@ const getFeedFromDB = async (page = 1, limit = 2) => {
   const posts = await Post.find({ isDeleted: false })
     .populate({ path: 'authorId', select: 'name profilePhoto' })
     .populate({ path: 'petId', select: 'name species profilePhoto' })
-    .populate({ path: 'refId' }) // resolves to Article or Post per refType
+    // .populate({ path: 'refId' }) // resolves to Article or Post per refType
+    .populate(sharedContentPopulate) // resolves to Article or Post per refType
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit);
@@ -176,6 +262,20 @@ const reactToPostIntoDB = async (
   );
 };
 
+const getSinglePostFromDB = async (postId: string) => {
+  const post = await Post.findOne({ _id: postId, isDeleted: false })
+    .populate({ path: 'authorId', select: 'name profilePhoto' })
+    .populate({ path: 'petId', select: 'name species profilePhoto' })
+    .populate(sharedContentPopulate);
+
+  if (!post) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Post not found');
+  }
+
+  console.log(post);
+  return post;
+};
+
 export const PostServices = {
   createPostIntoDB,
   createShareIntoDB,
@@ -184,4 +284,5 @@ export const PostServices = {
   updatePostIntoDB,
   deletePostFromDB,
   reactToPostIntoDB,
+  getSinglePostFromDB,
 };

@@ -33,7 +33,7 @@ const notificationSchema = new Schema<TNotification>(
     message: { type: String, required: true },
     targetType: {
       type: String,
-      enum: ['LostFound', 'Article', 'Comment', 'Group', 'User'],
+      enum: ['LostFound', 'Article', 'Post', 'Comment', 'Group', 'User'],
       required: true,
     },
     targetId: {

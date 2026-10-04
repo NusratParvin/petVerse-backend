@@ -13,23 +13,29 @@ import {
   commentsPaginationFields,
 } from './comments.constants';
 import pagination from '../../utils/pagination';
+import { Post } from '../posts/posts.model';
 
-const pushCommentToParent = async (
+const increaseCommentCount = async (
   targetType: TTargetType,
   targetId: string,
-  commentId: Types.ObjectId,
   session: mongoose.ClientSession,
 ) => {
   if (targetType === 'Article') {
     await Article.findByIdAndUpdate(
       targetId,
-      { $push: { comments: commentId } },
+      { $inc: { commentCount: 1 } },
       { session },
     );
   } else if (targetType === 'LostFound') {
     await LostFound.findByIdAndUpdate(
       targetId,
-      { $push: { comments: commentId } },
+      { $inc: { commentCount: 1 } },
+      { session },
+    );
+  } else if (targetType === 'Post') {
+    await Post.findByIdAndUpdate(
+      targetId,
+      { $inc: { commentCount: 1 } },
       { session },
     );
   }
@@ -46,7 +52,14 @@ const createCommentIntoDB = async (payload: TComment, userId: string) => {
       profilePhoto: payload.commenter.profilePhoto || '',
     },
   };
-  // console.log(commentData);
+
+  if (payload.targetType !== 'LostFound') {
+    commentData.isSighting = false;
+    commentData.isHelpfulLead = false;
+    delete commentData.sightingLocation;
+    delete commentData.sightingPhoto;
+  }
+
   const session = await mongoose.startSession();
   try {
     session.startTransaction();
@@ -64,21 +77,13 @@ const createCommentIntoDB = async (payload: TComment, userId: string) => {
         'postedBy',
       );
       postOwnerId = post?.postedBy?.toString() || null;
-    }
-
-    if (postOwnerId) {
-      await NotificationService.createNotification({
-        recipientId: postOwnerId,
-        senderId: userId,
-        senderName: payload.commenter.name,
-        senderPhoto: payload.commenter.profilePhoto,
-        type: payload.isSighting ? 'sighting' : 'comment',
-        message: payload.isSighting
-          ? `${payload.commenter.name} reported a sighting on your post`
-          : `${payload.commenter.name} commented on your post`,
-        targetType: payload.targetType,
-        targetId: payload.targetId.toString(),
-      });
+    } else if (payload.targetType === 'Post') {
+      const post = await Post.findOne({
+        _id: payload.targetId,
+        isDeleted: { $ne: true },
+      }).select('authorId');
+      if (!post) throw new AppError(httpStatus.NOT_FOUND, 'Post not found');
+      postOwnerId = post.authorId?.toString() || null;
     }
 
     const comment = await Comment.create([commentData], { session });
@@ -86,14 +91,34 @@ const createCommentIntoDB = async (payload: TComment, userId: string) => {
       throw new AppError(httpStatus.BAD_REQUEST, 'Comment creation failed');
     }
 
-    await pushCommentToParent(
+    await increaseCommentCount(
       payload.targetType,
       payload.targetId.toString(),
-      comment[0]._id,
       session,
     );
 
     await session.commitTransaction();
+
+    // notify
+    if (postOwnerId && postOwnerId !== userId) {
+      try {
+        await NotificationService.createNotification({
+          recipientId: postOwnerId,
+          senderId: userId,
+          senderName: payload.commenter.name,
+          senderPhoto: payload.commenter.profilePhoto,
+          type: payload.isSighting ? 'sighting' : 'comment',
+          message: payload.isSighting
+            ? `${payload.commenter.name} reported a sighting on your post`
+            : `${payload.commenter.name} commented on your post`,
+          targetType: payload.targetType,
+          targetId: payload.targetId.toString(),
+        });
+      } catch (err) {
+        console.error('Comment notification failed:', err);
+      }
+    }
+
     return comment[0];
   } catch (error) {
     await session.abortTransaction();

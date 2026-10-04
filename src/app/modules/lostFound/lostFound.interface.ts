@@ -29,5 +29,7 @@ export type TLostFound = {
   photos: string[];
   microchipNumber?: string;
   reward?: number;
+  commentCount: number;
+
   isDeleted: boolean;
 };

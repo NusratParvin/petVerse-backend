@@ -26,6 +26,10 @@ const lostFoundSchema = new Schema<TLostFound>(
     photos: [{ type: String }],
     microchipNumber: { type: String, trim: true },
     reward: { type: Number },
+    commentCount: {
+      type: Number,
+      default: 0,
+    },
     isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true },

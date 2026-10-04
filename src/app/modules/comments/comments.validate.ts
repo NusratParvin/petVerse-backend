@@ -24,7 +24,7 @@ import { z } from 'zod';
 
 const createCommentValidationSchema = z.object({
   // polymorphic target
-  targetType: z.enum(['Article', 'LostFound'], {
+  targetType: z.enum(['Article', 'LostFound', 'Post'], {
     required_error: 'targetType is required',
   }),
   targetId: z.string().nonempty({ message: 'targetId is required' }),

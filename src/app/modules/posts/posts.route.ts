@@ -40,6 +40,12 @@ router.get(
   PostControllers.getUserPosts,
 );
 
+router.get(
+  '/:id',
+  auth(USER_ROLE.USER, USER_ROLE.ADMIN),
+  PostControllers.getSinglePost,
+);
+
 router.patch(
   '/:id',
   auth(USER_ROLE.USER, USER_ROLE.ADMIN),

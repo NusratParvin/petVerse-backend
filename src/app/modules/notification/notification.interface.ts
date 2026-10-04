@@ -5,29 +5,30 @@ export type TNotificationType =
   | 'comment'
   | 'sighting'
   | 'helpful_lead'
-  | 'invitation'       // groups — wire when groups are fixed
-  | 'friend_request'   // wire when friends are fixed
-  | 'post_resolved'    // future
-  | 'vet_review';      // future
+  | 'invitation' // groups — wire when groups are fixed
+  | 'friend_request' // wire when friends are fixed
+  | 'post_resolved' // future
+  | 'vet_review'; // future
 
 export type TNotificationTargetType =
   | 'LostFound'
   | 'Article'
+  | 'Post'
   | 'Comment'
   | 'Group'
   | 'User';
 
 export type TNotification = {
-  recipient: Types.ObjectId;        // who sees it
+  recipient: Types.ObjectId; // who sees it
   sender: {
     senderId: Types.ObjectId;
     name: string;
     profilePhoto?: string;
   };
   type: TNotificationType;
-  message: string;                  // "Ahmed commented on your post"
+  message: string; // "Ahmed commented on your post"
   targetType: TNotificationTargetType;
-  targetId: Types.ObjectId;         // what to navigate to on click
+  targetId: Types.ObjectId; // what to navigate to on click
   isRead: boolean;
   createdAt?: Date;
 };

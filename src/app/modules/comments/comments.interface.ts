@@ -1,7 +1,7 @@
 import { Types } from 'mongoose';
 import { TVoteInfo } from '../articles/articles.interface';
 
-export type TTargetType = 'Article' | 'LostFound';
+export type TTargetType = 'Article' | 'LostFound' | 'Post';
 
 export type TComment = {
   targetType: TTargetType;

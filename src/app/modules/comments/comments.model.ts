@@ -66,7 +66,7 @@ const commentSchema = new Schema<TComment>(
     // --- polymorphic target ---
     targetType: {
       type: String,
-      enum: ['Article', 'LostFound'],
+      enum: ['Article', 'LostFound', 'Post'],
       required: true,
     },
     targetId: {

@@ -103,6 +103,16 @@ const reactToPost = catchAsync(async (req, res) => {
   });
 });
 
+const getSinglePost = catchAsync(async (req, res) => {
+  const result = await PostServices.getSinglePostFromDB(req.params.id);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Post retrieved successfully',
+    data: result,
+  });
+});
+
 export const PostControllers = {
   createPost,
   sharePost,
@@ -111,4 +121,5 @@ export const PostControllers = {
   updatePost,
   deletePost,
   reactToPost,
+  getSinglePost,
 };
