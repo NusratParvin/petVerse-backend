@@ -6,28 +6,61 @@ import { User } from '../user/user.model';
 import mongoose, { Types } from 'mongoose';
 import { Reaction } from '../reactions/reactions.model';
 import { REACTION_TYPE } from '../reactions/reactions.interface';
+import { buildExcerpt, calcReadTime, checkCanModify } from './articles.helpers';
+import { extract } from '../../utils/extract';
+import {
+  articleFilterableFields,
+  articlePaginationFields,
+} from './articles.constants';
+import pagination from '../../utils/pagination';
 
 const createArticleIntoDB = async (payload: TArticle, userId: string) => {
-  const articleData = { ...payload, authorId: userId };
+  const { title, content, category, petType, tags, images, isPremium, price } =
+    payload;
+
+  if (isPremium && (!price || price <= 0)) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      'Premium articles need a price greater than 0',
+    );
+  }
+
+  const articleData = {
+    title,
+    content,
+    category,
+    petType,
+    tags,
+    images,
+    isPremium,
+    price: isPremium ? price : 0,
+
+    authorId: new Types.ObjectId(userId),
+    excerpt: buildExcerpt(content),
+    readTime: calcReadTime(content),
+  };
+
   const session = await mongoose.startSession();
+
   try {
     session.startTransaction();
-
     const article = await Article.create([articleData], { session });
+
     if (!article || article.length === 0) {
       throw new Error('Article creation failed');
     }
 
-    const articleId = article[0]._id;
-
     await User.findByIdAndUpdate(
       userId,
-      { $push: { articles: articleId } },
-      { session, new: true },
+      {
+        $push: { articles: article[0]._id },
+      },
+      {
+        session,
+        new: true,
+      },
     );
-
     await session.commitTransaction();
-
     return article[0];
   } catch (error) {
     console.error('Error creating article:', error);
@@ -38,19 +71,79 @@ const createArticleIntoDB = async (payload: TArticle, userId: string) => {
   }
 };
 
-const getAllArticlesFromDB = async () => {
-  const result = await Article.find()
-    .populate({
-      path: 'authorId',
-      select: 'name profilePhoto followers',
-    })
-    .sort({ createdAt: -1 });
-  return result;
-};
+// const getAllArticlesFromDB = async () => {
+//   const result = await Article.find()
+//     .populate({
+//       path: 'authorId',
+//       select: 'name profilePhoto followers',
+//     })
+//     .sort({ createdAt: -1 });
+//   return result;
+// };
 
 // Get a single article by ID
+
+const getAllArticlesFromDB = async (query: Record<string, unknown>) => {
+  const filterableFields = extract(query, articleFilterableFields);
+  const paginationOptions = extract(query, articlePaginationFields);
+
+  const { page, limit, skip, sortBy, sortOrder } =
+    pagination(paginationOptions);
+
+  const filter: Record<string, unknown> = {
+    isPublish: true,
+    isDeleted: { $ne: true },
+  };
+
+  // Search in title, content and tags
+  const searchTerm = query.searchTerm?.trim();
+  if (searchTerm) {
+    const regex = new RegExp(escapeRegex(searchTerm), 'i');
+    filter.$or = [{ title: regex }, { content: regex }, { tags: regex }];
+  }
+
+  // Unknown values (like "All") are simply ignored
+  const category = pickAllowed(query.category, ARTICLE_CATEGORIES);
+  if (category) filter.category = category;
+
+  const petType = pickAllowed(query.petType, PET_TYPES);
+  if (petType) filter.petType = petType;
+
+  if (query.isPremium === 'true') filter.isPremium = true;
+  if (query.isPremium === 'false') filter.isPremium = false;
+
+  // Date range
+  const range = pickAllowed(query.range, ARTICLE_RANGES);
+  if (range && range !== 'all') {
+    filter.createdAt = {
+      $gte: new Date(Date.now() - RANGE_DAYS[range] * DAY_MS),
+    };
+  }
+
+  const sort = SORT_MAP[pickAllowed(query.sort, ARTICLE_SORTS) ?? 'newest'];
+
+  const [data, total] = await Promise.all([
+    Article.find(filter)
+      .select('-content') // the list uses the excerpt, not the full text
+      .populate({ path: 'authorId', select: 'name profilePhoto followers' })
+      .sort(sort)
+      .skip(skip)
+      .limit(limit),
+    Article.countDocuments(filter),
+  ]);
+
+  return {
+    data,
+    meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+  };
+};
+
 const getSingleArticleFromDB = async (articleId: string) => {
-  const article = await Article.findById(articleId)
+  const article = await Article.findByIdAndUpdate(
+    articleId,
+    { $inc: { viewCount: 1 } },
+    { new: true },
+  )
     .populate({
       path: 'comments',
       model: 'Comment',
@@ -62,8 +155,7 @@ const getSingleArticleFromDB = async (articleId: string) => {
       select: 'name profilePhoto followers following ',
     });
 
-  console.log(article, 'service');
-  if (!article) {
+  if (!article || article.isDeleted) {
     throw new AppError(httpStatus.NOT_FOUND, 'No Data Found');
   }
 
@@ -75,9 +167,16 @@ const updateArticleVotesIntoDB = async (
   action: TVoteType,
   userId: string,
 ) => {
+  if (action !== 'upvote' && action !== 'downvote') {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      'Action must be "upvote" or "downvote"',
+    );
+  }
+
   const article = await Article.findById(articleId);
 
-  if (!article) {
+  if (!article || article.isDeleted) {
     throw new AppError(httpStatus.NOT_FOUND, 'Article not found');
   }
 
@@ -85,85 +184,88 @@ const updateArticleVotesIntoDB = async (
     (vote) => vote.userId.toString() === userId,
   );
 
-  // If user has already voted
-  if (existingVote) {
-    if (existingVote.voteType === action) {
-      throw new AppError(
-        httpStatus.BAD_REQUEST,
-        'You have already cast this vote',
-      );
-    } else {
-      if (action === 'upvote') {
-        article.upvotes += 1;
-        article.downvotes -= 1;
-      } else if (action === 'downvote') {
-        article.downvotes += 1;
-        article.upvotes -= 1;
-      }
-
-      existingVote.voteType = action;
-    }
-  } else {
-    if (action === 'upvote') {
-      article.upvotes += 1;
-    } else if (action === 'downvote') {
-      article.downvotes += 1;
-    }
-
+  if (!existingVote) {
+    // 1. First vote from this user
     article.voteInfo.push({
       userId: new Types.ObjectId(userId),
       voteType: action,
     });
+    if (action === 'upvote') article.upvotes += 1;
+    else article.downvotes += 1;
+  } else if (existingVote.voteType === action) {
+    // 2. Same button clicked again: remove the vote
+    article.voteInfo = article.voteInfo.filter(
+      (vote) => vote.userId.toString() !== userId,
+    );
+    if (action === 'upvote') article.upvotes = Math.max(0, article.upvotes - 1);
+    else article.downvotes = Math.max(0, article.downvotes - 1);
+  } else {
+    // 3. Switching from one vote to the other
+    existingVote.voteType = action;
+    if (action === 'upvote') {
+      article.upvotes += 1;
+      article.downvotes = Math.max(0, article.downvotes - 1);
+    } else {
+      article.downvotes += 1;
+      article.upvotes = Math.max(0, article.upvotes - 1);
+    }
   }
 
-  const updatedArticle = await article.save();
-
-  if (!updatedArticle) {
-    throw new AppError(httpStatus.NOT_IMPLEMENTED, 'Vote update failed');
-  }
-
-  return updatedArticle;
+  return await article.save();
 };
 
 // Update an article
 const updateArticleIntoDB = async (
   articleId: string,
-  updateData: Partial<TArticle>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  updateData: any,
+  userId: string,
+  userRole: string,
 ) => {
-  // Check if the article exists
-  const isArticleExists = await Article.findById(articleId);
+  const article = await Article.findById(articleId);
 
-  if (!isArticleExists) {
+  if (!article || article.isDeleted) {
     throw new AppError(httpStatus.NOT_FOUND, 'No Data Found');
   }
 
-  // If isPremium is set to false, set price to 0
-  if (updateData.isPremium === false) {
-    updateData.price = 0;
+  // Only the author or an admin can edit
+  checkCanModify(article.authorId, userId, userRole);
+
+  // Zod already removed any unknown fields
+  const changes: Record<string, unknown> = { ...updateData };
+
+  // If content was sent, rebuild the preview fields
+  if (updateData.content) {
+    changes.excerpt = buildExcerpt(updateData.content);
+    changes.readTime = calcReadTime(updateData.content);
   }
 
-  console.log('Update Data:', updateData, 'bhbmnbmbn,n,m'); // Debugging - Log updateData
+  // Premium / price rules, using the saved values when not sent
+  const isPremiumAfterUpdate = updateData.isPremium ?? article.isPremium;
+  const priceAfterUpdate = updateData.price ?? article.price ?? 0;
 
-  try {
-    // Update the article
-    const updatedArticle = await Article.findByIdAndUpdate(
-      articleId,
-      updateData,
-      {
-        new: true, // Return the updated document
-        runValidators: true, // Ensure validators run on update
-      },
+  if (isPremiumAfterUpdate && priceAfterUpdate <= 0) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      'Premium articles need a price greater than 0',
     );
-
-    if (!updatedArticle) {
-      throw new AppError(httpStatus.NOT_IMPLEMENTED, 'Update Failed');
-    }
-
-    return updatedArticle;
-  } catch (error) {
-    console.error('Update Error:', error); // Debugging - Log errors
-    throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Update Failed');
   }
+
+  // Free articles always have price 0
+  if (!isPremiumAfterUpdate) {
+    changes.price = 0;
+  }
+
+  const updatedArticle = await Article.findByIdAndUpdate(articleId, changes, {
+    new: true,
+    runValidators: true,
+  });
+
+  if (!updatedArticle) {
+    throw new AppError(httpStatus.NOT_FOUND, 'No Data Found');
+  }
+
+  return updatedArticle;
 };
 
 // Update publish status of an article
@@ -208,19 +310,19 @@ const updatePublishArticleIntoDB = async (
 };
 
 // Delete an article
-const deleteArticleFromDB = async (articleId: string) => {
-  const isArticleExists = await Article.findById(articleId);
-
-  if (!isArticleExists) {
+const deleteArticleFromDB = async (
+  articleId: string,
+  userId: string,
+  userRole: string,
+) => {
+  const article = await Article.findById(articleId);
+  if (!article) {
     throw new AppError(httpStatus.NOT_FOUND, 'No Data Found');
   }
 
-  const deletedArticle = await Article.deleteOne({ _id: articleId });
+  checkCanModify(article.authorId, userId, userRole);
 
-  if (!deletedArticle) {
-    throw new AppError(httpStatus.NOT_IMPLEMENTED, 'Delete Failed');
-  }
-  return deletedArticle;
+  return await Article.deleteOne({ _id: articleId });
 };
 
 // Get authors sorted by most followers

@@ -20,6 +20,7 @@ export const calcReadTime = (content: string) => {
   const wordsCount = stripHtml(content).split('').filter(Boolean).length;
   return Math.max(1, Math.ceil(wordsCount / 200));
 };
+
 export const checkCanModify = (
   authorId: Types.ObjectId,
   userId: string,

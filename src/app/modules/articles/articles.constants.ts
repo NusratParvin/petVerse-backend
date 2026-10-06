@@ -16,3 +16,14 @@ export const PET_TYPES = [
   'reptile',
   'other',
 ] as const;
+
+export const articleFilterableFields = [
+  'search',
+  'category',
+  'petType',
+  'status',
+  'isPremium',
+  'range',
+];
+export const articleSearchableFields = ['title', 'content', 'tags'];
+export const articlePaginationFields = ['page', 'limit', 'sortBy', 'sortOrder'];
